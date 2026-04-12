@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pigeon | Friends</title>
+    <style>
+        :root {
+            --pigeon-blue: #5d9cec;
+            --bg: #f0f2f5;
+            --messenger-green: #2ecc71;
+        }
+        body { font-family: sans-serif; margin: 0; background: var(--bg); }
+
+        header {
+            background: white; padding: 10px 20px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .menu-icon { font-size: 24px; cursor: pointer; }
+        .logo-name { font-weight: bold; font-size: 20px; color: var(--pigeon-blue); }
+
+        /* --- SIDE NAVIGATION --- */
+        #nav-menu {
+            position: fixed; left: -250px; top: 50px; width: 220px;
+            height: 100%; background: white; transition: 0.3s;
+            padding: 20px; z-index: 99; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        #nav-menu.open { left: 0; }
+        .nav-item { padding: 15px 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .nav-item:hover { background: #f9f9f9; color: var(--pigeon-blue); }
+
+        /* --- POSTS & FRIENDS BUTTON --- */
+        .feed { max-width: 500px; margin: 20px auto; padding: 10px; }
+        .post { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .user-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .username { font-weight: bold; color: var(--pigeon-blue); }
+        
+        .friend-btn { 
+            background: var(--messenger-green); color: white; border: none; 
+            padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 0.8em;
+        }
+
+        /* --- CHAT BOX (Hidden by default) --- */
+        #chat-window {
+            position: fixed; bottom: 0; right: 20px; width: 250px;
+            background: white; border:
+
