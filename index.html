@@ -3,159 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pigeon Platform</title>
+    <title>Pigeon | Connect</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0f0f0f; color: white; font-family: sans-serif; }
-        #sidebarMenu { transform: translateX(-100%); transition: 0.3s ease-in-out; position: fixed; top: 0; left: 0; height: 100%; width: 250px; background: #121212; z-index: 1000; border-right: 1px solid #333; }
-        #sidebarMenu.active { transform: translateX(0); }
+        body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
         .auth-screen { position: fixed; inset: 0; z-index: 5000; display: flex; items: center; justify-content: center; background: #075e54; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .hidden { display: none !important; }
-        .btn-green { background: #25d366; color: black; font-weight: bold; padding: 12px; border-radius: 8px; width: 100%; }
-        .liked { color: #25d366 !important; }
-        .disliked { color: #ff4b4b !important; }
-        .friended { color: #3b82f6 !important; }
+        #sidebarMenu { transform: translateX(-100%); transition: 0.3s; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: #121212; z-index: 1000; border-right: 1px solid #333; }
+        #sidebarMenu.active { transform: translateX(0); }
+        .logo-text { background: linear-gradient(to right, #25d366, #1da1f2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-20">
 
     <div id="loginStep" class="auth-screen">
-        <div class="bg-white p-8 rounded-2xl text-black w-80 text-center">
-            <i class="fa-solid fa-pigeon text-5xl text-[#075e54] mb-4"></i>
-            <h2 class="text-2xl font-bold mb-6">Pigeon Sign In</h2>
-            <input type="text" id="userInput" placeholder="Username" class="border-2 border-gray-200 p-2 w-full mb-4 rounded-lg text-black outline-none focus:border-green-500">
-            <button onclick="toSub()" class="btn-green uppercase">Sign In</button>
+        <div class="bg-white p-10 rounded-3xl text-black w-96 text-center shadow-2xl">
+            <div class="text-6xl mb-4">🕊️</div>
+            <h1 class="text-3xl font-black mb-2">Pigeon</h1>
+            <p class="text-gray-500 mb-8 font-medium">Sign in with Google to continue</p>
+            
+            <div id="g_id_onload" data-client_id="YOUR_ID" data-callback="onSignIn"></div>
+            <div class="g_id_signin" data-type="standard"></div>
+
+            <button onclick="onSignIn()" class="mt-6 w-full border-2 border-gray-200 py-2 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-gray-50">
+               <img src="https://www.google.com/favicon.ico" class="w-4"> Simulate Google Login
+            </button>
         </div>
     </div>
 
-    <div id="subStep" class="auth-screen hidden">
-        <div class="bg-white p-8 rounded-2xl text-black w-80 text-center border-4 border-yellow-500">
-            <h2 class="text-3xl font-black mb-2 italic text-yellow-600">PREMIUM</h2>
-            <p class="mb-8 text-gray-600">Subscribe to unlock the Pigeon feed and post your videos.</p>
-            <button onclick="startApp()" class="btn-green uppercase">Subscribe & Enter</button>
+    <div id="subStep" class="auth-screen hidden !bg-[#111]">
+        <div class="bg-white p-10 rounded-3xl text-black w-96 text-center border-b-8 border-yellow-500 shadow-2xl">
+            <h2 class="text-3xl font-black mb-4 uppercase">One More Step!</h2>
+            <p class="text-lg mb-8 text-gray-600">You must <b>Subscribe</b> to my channel to unlock the Pigeon App.</p>
+            
+            <a href="https://www.youtube.com/@YOUR_CHANNEL_HERE?sub_confirmation=1" 
+               target="_blank" 
+               onclick="showEnterButton()"
+               class="block w-full bg-red-600 text-white font-black py-4 rounded-2xl text-xl shadow-xl hover:bg-red-700 transition mb-4">
+                SUBSCRIBE TO UNLOCK
+            </a>
+
+            <button id="finalEnter" onclick="unlockApp()" class="hidden w-full bg-[#075e54] text-white font-bold py-3 rounded-xl uppercase animate-bounce">
+                I Subscribed! Enter Site
+            </button>
         </div>
     </div>
 
     <div id="app" class="hidden">
-        <div id="sidebarMenu" class="p-6">
-            <div class="flex justify-between items-center mb-10">
-                <span class="font-bold text-2xl">Pigeon</span>
-                <button onclick="toggleMenu()"><i class="fa-solid fa-xmark text-2xl"></i></button>
-            </div>
-            <nav class="flex flex-col space-y-6 text-lg">
-                <a href="#" class="flex items-center"><i class="fa-solid fa-house mr-4"></i> Home</a>
-                <a href="#" class="flex items-center"><i class="fa-solid fa-user-group mr-4"></i> Friends</a>
-                <a href="#" class="flex items-center"><i class="fa-solid fa-bolt mr-4 text-yellow-500"></i> Shorts</a>
-                <a href="#" class="flex items-center"><i class="fa-solid fa-rss mr-4"></i> Following</a>
-                <a href="#" class="flex items-center"><i class="fa-solid fa-user mr-4"></i> You</a>
-            </nav>
-        </div>
-
-        <header class="fixed top-0 w-full bg-[#0f0f0f] p-4 flex justify-between items-center border-b border-gray-800 z-50">
+        <header class="fixed top-0 w-full bg-[#050505] p-4 flex justify-between items-center border-b border-gray-900 z-50">
             <div class="flex items-center space-x-4">
-                <button onclick="toggleMenu()"><i class="fa-solid fa-bars text-xl"></i></button>
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-pigeon text-2xl"></i>
-                    <span class="font-black text-xl uppercase tracking-tighter">Pigeon</span>
+                <i class="fa-solid fa-bars text-xl cursor-pointer" onclick="toggleMenu()"></i>
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="openGame()">
+                    <span class="text-2xl">🕊️</span>
+                    <span class="logo-text text-2xl uppercase tracking-tighter">Pigeon</span>
                 </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <div class="text-right hidden sm:block">
-                    <p id="nameTag" class="text-xs font-bold text-gray-400">@User</p>
-                    <p class="text-[10px] text-green-500 font-bold uppercase">Subscriber</p>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold">P</div>
-            </div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-green-400 to-blue-500 flex items-center justify-center font-bold">U</div>
         </header>
 
-        <main class="max-w-xl mx-auto pt-24 px-4">
-            <div class="bg-[#1e1e1e] p-4 rounded-xl mb-8 border border-gray-800">
-                <textarea id="postText" placeholder="What's happening?" class="bg-transparent w-full outline-none text-lg mb-4 h-12"></textarea>
-                <div class="flex justify-between items-center pt-3 border-t border-gray-800">
-                    <div class="flex space-x-5 text-gray-400 text-lg">
-                        <i class="fa-solid fa-image cursor-pointer hover:text-white"></i>
-                        <i class="fa-solid fa-video cursor-pointer hover:text-white"></i>
-                        <i class="fa-solid fa-square-poll-vertical cursor-pointer hover:text-white"></i>
-                        <i class="fa-solid fa-microphone cursor-pointer hover:text-white"></i>
-                    </div>
-                    <button onclick="addPost()" class="bg-[#075e54] px-6 py-1 rounded-full font-bold hover:bg-green-700 transition">Post</button>
-                </div>
+        <main id="feed" class="max-w-xl mx-auto pt-24 px-4 space-y-6">
+            <div class="bg-[#121212] rounded-2xl border border-gray-800 p-8 text-center">
+                <p class="text-gray-400 text-lg">Your Pigeon feed is empty. Be the first to post!</p>
             </div>
-
-            <div id="pigeonFeed" class="space-y-6">
-                </div>
         </main>
 
-        <nav class="fixed bottom-0 w-full bg-[#0f0f0f] border-t border-gray-800 flex justify-around items-center py-3 z-50">
-            <button class="flex flex-col items-center"><i class="fa-solid fa-house"></i><span class="text-[9px] mt-1">Home</span></button>
-            <button class="flex flex-col items-center text-gray-500"><i class="fa-solid fa-bolt"></i><span class="text-[9px] mt-1">Shorts</span></button>
-            <button class="text-4xl"><i class="fa-solid fa-circle-plus"></i></button>
-            <button class="flex flex-col items-center text-gray-500"><i class="fa-solid fa-rss"></i><span class="text-[9px] mt-1">Following</span></button>
-            <button class="flex flex-col items-center text-gray-500"><i class="fa-solid fa-user"></i><span class="text-[9px] mt-1">You</span></button>
+        <nav class="fixed bottom-0 w-full bg-[#050505] border-t border-gray-900 flex justify-around items-center py-4 z-50">
+            <i class="fa-solid fa-house text-xl"></i>
+            <div class="bg-white w-14 h-14 rounded-full flex items-center justify-center -mt-10 shadow-2xl cursor-pointer" onclick="openPostModal()">
+                <i class="fa-solid fa-plus text-black text-3xl"></i>
+            </div>
+            <i class="fa-solid fa-user text-xl text-gray-600"></i>
         </nav>
     </div>
 
+    <div id="postModal" class="modal">
+        <div class="bg-[#181818] w-full max-w-lg p-6 rounded-3xl border border-gray-700">
+            <h2 class="text-xl font-bold mb-4 text-green-500">New Post</h2>
+            <textarea id="postInput" placeholder="Type your text here..." class="bg-transparent w-full h-40 text-2xl outline-none border-none resize-none"></textarea>
+            <div class="flex justify-end pt-4 border-t border-gray-800">
+                <button onclick="sendPost()" class="bg-[#25d366] text-black font-black px-10 py-2 rounded-full uppercase">Post Now</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameScreen" class="modal">
+        <canvas id="gameCanvas" width="320" height="400" class="border-4 border-white rounded-xl"></canvas>
+        <button onclick="closeGame()" class="mt-8 bg-red-600 px-10 py-2 rounded-full font-black">QUIT</button>
+    </div>
+
     <script>
-        // STEP 1 to STEP 2
-        function toSub() {
-            const user = document.getElementById('userInput').value;
-            if (user.trim() === "") {
-                alert("Please enter a name first!");
-                return;
-            }
-            document.getElementById('nameTag').innerText = "@" + user;
+        // 1. SIGN IN FLOW
+        function onSignIn() {
             document.getElementById('loginStep').classList.add('hidden');
             document.getElementById('subStep').classList.remove('hidden');
         }
 
-        // STEP 2 to MAIN APP
-        function startApp() {
+        // 2. SUB FLOW
+        function showEnterButton() {
+            // Shows the "Enter" button after they click the sub link
+            setTimeout(() => {
+                document.getElementById('finalEnter').classList.remove('hidden');
+            }, 2000);
+        }
+
+        function unlockApp() {
             document.getElementById('subStep').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
             document.body.style.overflow = "auto";
         }
 
-        // SIDEBAR TOGGLE
-        function toggleMenu() {
-            const menu = document.getElementById('sidebarMenu');
-            menu.classList.toggle('active');
+        // 3. POSTING ENGINE
+        function openPostModal() { document.getElementById('postModal').style.display = 'flex'; }
+        function sendPost() {
+            const text = document.getElementById('postInput').value;
+            if(!text) return;
+            const card = document.createElement('div');
+            card.className = "bg-[#121212] border border-gray-800 p-6 rounded-2xl mb-4";
+            card.innerHTML = `<p class="text-xl mb-4">${text}</p><div class="flex gap-6 text-gray-500"><i class="fa-solid fa-thumbs-up hover:text-green-400 cursor-pointer"></i><i class="fa-solid fa-share hover:text-blue-400 cursor-pointer"></i></div>`;
+            document.getElementById('feed').prepend(card);
+            document.getElementById('postInput').value = "";
+            document.getElementById('postModal').style.display = 'none';
         }
 
-        // ADD NEW POST
-        function addPost() {
-            const content = document.getElementById('postText').value;
-            if (content.trim() === "") return;
-
-            const feed = document.getElementById('pigeonFeed');
-            const postBox = document.createElement('div');
-            postBox.className = "bg-[#1e1e1e] rounded-xl border border-gray-800 overflow-hidden";
-            
-            postBox.innerHTML = `
-                <div class="p-4 flex justify-between items-center">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-7 h-7 bg-gray-600 rounded-full"></div>
-                        <span class="font-bold text-sm">Pigeon Member</span>
-                    </div>
-                    <button class="bg-red-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Subscribe</button>
-                </div>
-                <div class="px-4 pb-4 text-gray-200">${content}</div>
-                <div class="p-4 flex justify-between text-gray-400 border-t border-gray-700 bg-black/20">
-                    <div class="flex space-x-6">
-                        <i class="fa-regular fa-thumbs-up cursor-pointer hover:text-white" onclick="this.classList.toggle('liked')"></i>
-                        <i class="fa-regular fa-thumbs-down cursor-pointer hover:text-white" onclick="this.classList.toggle('disliked')"></i>
-                        <i class="fa-solid fa-share cursor-pointer hover:text-white"></i>
-                    </div>
-                    <div class="flex space-x-6">
-                        <i class="fa-regular fa-bookmark cursor-pointer hover:text-white"></i>
-                        <i class="fa-solid fa-user-plus cursor-pointer hover:text-white" onclick="this.classList.toggle('friended')"></i>
-                    </div>
-                </div>
-            `;
-            
-            feed.prepend(postBox);
-            document.getElementById('postText').value = ""; // Clear input
+        // 4. GAME ENGINE
+        const cvs = document.getElementById('gameCanvas'), ctx = cvs.getContext('2d');
+        let b = {y:200, v:0}, pipes = [], active = false, anim;
+        function openGame() { document.getElementById('gameScreen').style.display = 'flex'; active=true; b.y=200; b.v=0; pipes=[]; loop(); }
+        function closeGame() { document.getElementById('gameScreen').style.display = 'none'; active=false; cancelAnimationFrame(anim); }
+        function loop() {
+            if(!active) return;
+            ctx.fillStyle = "#4ec0ca"; ctx.fillRect(0,0,320,400);
+            b.v += 0.4; b.y += b.v;
+            ctx.font = "30px Arial"; ctx.fillText("🕊️", 50, b.y);
+            if(pipes.length==0 || pipes[pipes.length-1].x < 150) pipes.push({x:320, h:Math.random()*150+50});
+            pipes.forEach(p => { 
+                p.x -= 3; ctx.fillStyle = "green"; ctx.fillRect(p.x, 0, 40, p.h); ctx.fillRect(p.x, p.h+100, 40, 400);
+                if(50+20 > p.x && 50 < p.x+40 && (b.y-20 < p.h || b.y > p.h+80)) active = false;
+            });
+            pipes = pipes.filter(p => p.x > -50);
+            if(b.y > 400 || b.y < 0) active = false;
+            anim = requestAnimationFrame(loop);
         }
+        window.onkeydown = (e) => { if(e.code=='Space') b.v=-7; };
+        cvs.onmousedown = () => { b.v=-7; };
     </script>
 </body>
 </html>
