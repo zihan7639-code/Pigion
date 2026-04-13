@@ -3,180 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pigeon / X</title>
+    <title>Pigeon | Sign In</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #15202b; color: white; }
-        .twitter-blue { background-color: #1d9bf0; }
-        .twitter-border { border-color: #38444d; }
-        .twitter-hover:hover { background-color: rgba(29, 155, 240, 0.1); }
-        .game-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        #gameCanvas { background: #15202b; border: 2px solid #1d9bf0; border-radius: 15px; }
-        #loginOverlay { position: fixed; inset: 0; background: #15202b; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        body { background-color: #0f0f0f; color: #ffffff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        .sidebar { transition: 0.3s; transform: translateX(-100%); position: fixed; top: 0; left: 0; height: 100%; width: 260px; background: #121212; z-index: 100; border-right: 1px solid #333; }
+        .sidebar.active { transform: translateX(0); }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #0f0f0f; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 12px 0; z-index: 50; }
+        .auth-screen { position: fixed; inset: 0; z-index: 5000; display: flex; items: center; justify-content: center; background: #075e54; }
+        .hidden { display: none !important; }
+        .input-style { background: #f3f4f6; border: 1px solid #d1d5db; color: black; width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; outline: none; }
+        .pigeon-btn { background-color: #25d366; color: black; font-weight: bold; border-radius: 99px; transition: 0.2s; width: 100%; padding: 12px; }
+        .pigeon-btn:hover { background-color: #1ebe57; }
     </style>
 </head>
-<body class="font-sans">
+<body class="pb-24">
 
-    <div id="loginOverlay">
-        <div class="p-8 text-center max-w-sm w-full mx-4">
-            <i class="fa-solid fa-pigeon text-6xl text-white mb-8"></i>
-            <h2 class="text-3xl font-black mb-8">Happening now.</h2>
-            <h3 class="text-xl font-bold mb-4">Join Pigeon today.</h3>
-            <button onclick="signIn()" class="w-full bg-white text-black font-bold py-3 rounded-full hover:bg-gray-200 transition mb-4">
-                Sign in to Pigeon
-            </button>
-            <p class="text-xs text-gray-500">By signing in, you agree to the Pigeon Terms of Service.</p>
+    <div id="loginStep" class="auth-screen">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center text-black max-w-sm w-full mx-4">
+            <i class="fa-solid fa-pigeon text-5xl text-[#075e54] mb-4"></i>
+            <h1 class="text-2xl font-black mb-6">Sign In to Pigeon</h1>
+            <input type="text" id="username" placeholder="Username / Email" class="input-style">
+            <input type="password" id="password" placeholder="Password" class="input-style">
+            <button onclick="goToSubscribe()" class="pigeon-btn">SIGN IN</button>
+            <p class="text-xs text-gray-500 mt-4 underline cursor-pointer">Forgot password?</p>
         </div>
     </div>
 
-    <header class="border-b twitter-border p-3 flex justify-between items-center sticky top-0 z-50 bg-[#15202b]/80 backdrop-blur-md">
-        <div class="flex items-center space-x-2 cursor-pointer group" onclick="startGame()">
-            <div class="p-2 rounded-full group-hover:bg-blue-500/10 transition">
-                <i class="fa-solid fa-pigeon text-2xl text-[#1d9bf0]"></i>
-            </div>
-            <span class="text-xl font-bold hidden sm:block">Pigeon</span>
+    <div id="subStep" class="auth-screen hidden">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center text-black max-w-sm w-full mx-4 border-4 border-yellow-400">
+            <i class="fa-solid fa-crown text-5xl text-yellow-500 mb-4"></i>
+            <h1 class="text-3xl font-black mb-2">Almost There!</h1>
+            <p class="text-gray-600 mb-8">To enter the Pigeon platform, you must subscribe to our premium service.</p>
+            <button onclick="enterSite()" class="pigeon-btn text-xl">SUBSCRIBE & ENTER</button>
         </div>
-
-        <div class="font-bold text-lg">Home</div>
-
-        <div class="flex items-center space-x-3 bg-white/5 py-1 px-4 rounded-full border twitter-border hover:bg-white/10 cursor-pointer">
-            <div class="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center">
-                <i class="fa-solid fa-user text-sm text-white"></i>
-            </div>
-            <div class="text-left">
-                <p class="text-xs font-bold leading-none">@pigeon_user</p>
-                <p class="text-[10px] text-blue-400">✓ Subscribed</p>
-            </div>
-        </div>
-    </header>
-
-    <div id="gameScreen" class="game-overlay">
-        <div class="mb-4 text-center">
-            <h2 class="text-2xl font-black text-blue-400">PIGEON FLYER</h2>
-            <p class="text-gray-400 text-sm">Tap or Space to flap</p>
-        </div>
-        <canvas id="gameCanvas" width="320" height="400"></canvas>
-        <button onclick="closeGame()" class="mt-6 border border-red-500 text-red-500 px-10 py-2 rounded-full font-bold hover:bg-red-500/10">Quit Game</button>
     </div>
 
-    <main class="max-w-2xl mx-auto border-x twitter-border min-h-screen">
-        
-        <div class="p-4 border-b twitter-border">
-            <div class="flex space-x-4">
-                <div class="w-12 h-12 rounded-full bg-gray-600 flex-shrink-0"></div>
-                <div class="w-full">
-                    <textarea placeholder="What is happening?!" class="w-full bg-transparent text-xl outline-none resize-none h-20" rows="2"></textarea>
-                    
-                    <div class="flex justify-between items-center border-t twitter-border pt-3">
-                        <div class="flex space-x-4 text-[#1d9bf0] text-lg">
-                            <i class="fa-solid fa-image cursor-pointer p-2 rounded-full twitter-hover"></i>
-                            <i class="fa-solid fa-square-poll-vertical cursor-pointer p-2 rounded-full twitter-hover"></i>
-                            <i class="fa-solid fa-face-smile cursor-pointer p-2 rounded-full twitter-hover"></i>
-                            <i class="fa-solid fa-location-dot cursor-pointer p-2 rounded-full twitter-hover"></i>
-                            <i class="fa-solid fa-video cursor-pointer p-2 rounded-full twitter-hover"></i>
-                        </div>
-                        <button class="twitter-blue text-white px-6 py-2 rounded-full font-bold hover:opacity-90">Post</button>
-                    </div>
-                </div>
+    <div id="pigeonPlatform" class="hidden">
+        <div id="sidebarMenu" class="sidebar p-6">
+            <div class="flex justify-between items-center mb-10">
+                <span class="text-2xl font-bold">Pigeon Menu</span>
+                <i class="fa-solid fa-xmark text-2xl cursor-pointer" onclick="toggleMenu()"></i>
             </div>
+            <nav class="space-y-6">
+                <a href="#" class="flex items-center space-x-4 text-lg"><i class="fa-solid fa-house"></i> <span>Home</span></a>
+                <a href="#" class="flex items-center space-x-4 text-lg"><i class="fa-solid fa-user-group"></i> <span>Friends</span></a>
+                <a href="#" class="flex items-center space-x-4 text-lg"><i class="fa-solid fa-bolt"></i> <span>Shorts</span></a>
+                <a href="#" class="flex items-center space-x-4 text-lg"><i class="fa-solid fa-rss"></i> <span>Following</span></a>
+                <a href="#" class="flex items-center space-x-4 text-lg"><i class="fa-solid fa-circle-user"></i> <span>You</span></a>
+            </nav>
         </div>
 
-        <div class="divide-y twitter-border">
-            <div class="p-4 hover:bg-white/[0.02] transition cursor-pointer">
-                <div class="flex space-x-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">🐦</div>
-                    <div>
-                        <div class="flex items-center space-x-1">
-                            <span class="font-bold">Pigeon Official</span>
-                            <span class="text-gray-500 text-sm">@pigeon · 1h</span>
-                        </div>
-                        <p class="mt-1">Welcome to my site! This is my main page where we talk about all things pigeon. 🐦✨</p>
-                        <div class="flex justify-between mt-3 text-gray-500 max-w-md">
-                            <i class="fa-regular fa-comment hover:text-blue-400"></i>
-                            <i class="fa-solid fa-retweet hover:text-green-400"></i>
-                            <i class="fa-regular fa-heart hover:text-pink-500"></i>
-                            <i class="fa-solid fa-chart-simple hover:text-blue-400"></i>
-                        </div>
+        <header class="p-4 flex justify-between items-center sticky top-0 bg-[#0f0f0f]/90 backdrop-blur-md z-40 border-b border-gray-800">
+            <div class="flex items-center space-x-4">
+                <i class="fa-solid fa-bars text-xl cursor-pointer" onclick="toggleMenu()"></i>
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="toggleGame()">
+                    <i class="fa-solid fa-pigeon text-2xl text-white"></i>
+                    <span id="logoName" class="text-xl font-black uppercase">Pigeon</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="text-right">
+                    <p id="displayUser" class="text-xs font-bold text-gray-400 uppercase">User</p>
+                    <p class="text-[10px] font-black text-green-500">✓ SUBSCRIBED</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-green-400 to-blue-500 flex items-center justify-center font-bold">P</div>
+            </div>
+        </header>
+
+        <main class="max-w-xl mx-auto p-4">
+            <div class="bg-[#1e1e1e] rounded-2xl p-4 mb-8 border border-gray-800">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0"></div>
+                    <input type="text" placeholder="Start a pigeon post..." class="bg-[#2a2a2a] w-full rounded-full py-2 px-5 outline-none">
+                </div>
+                <div class="flex justify-around text-gray-400 border-t border-gray-800 pt-3">
+                    <i class="fa-solid fa-image hover:text-green-500 cursor-pointer"></i>
+                    <i class="fa-solid fa-video hover:text-blue-500 cursor-pointer"></i>
+                    <i class="fa-solid fa-square-poll-vertical hover:text-yellow-500 cursor-pointer"></i>
+                    <i class="fa-solid fa-microphone hover:text-red-500 cursor-pointer"></i>
+                </div>
+            </div>
+
+            <div class="bg-[#1e1e1e] rounded-2xl border border-gray-800 overflow-hidden mb-6">
+                <div class="p-4 flex items-center justify-between">
+                    <span class="font-bold">Pigeon Global News</span>
+                    <button class="bg-red-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase">Subscribe</button>
+                </div>
+                <div class="aspect-video bg-black flex items-center justify-center">
+                    <i class="fa-solid fa-play text-5xl opacity-20"></i>
+                </div>
+                <div class="p-4 flex justify-between text-gray-400">
+                    <div class="flex space-x-6">
+                        <i class="fa-regular fa-thumbs-up"></i>
+                        <i class="fa-regular fa-thumbs-down"></i>
+                        <i class="fa-solid fa-share"></i>
+                    </div>
+                    <div class="flex space-x-6">
+                        <i class="fa-regular fa-bookmark"></i>
+                        <i class="fa-solid fa-user-plus"></i>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
+
+        <nav class="bottom-nav">
+            <div class="flex flex-col items-center"><i class="fa-solid fa-house"></i><span class="text-[9px] mt-1">Home</span></div>
+            <div class="flex flex-col items-center text-gray-500"><i class="fa-solid fa-bolt"></i><span class="text-[9px] mt-1">Shorts</span></div>
+            <div class="relative -top-3"><i class="fa-solid fa-circle-plus text-5xl text-white"></i></div>
+            <div class="flex flex-col items-center text-gray-500"><i class="fa-solid fa-rss"></i><span class="text-[9px] mt-1">Following</span></div>
+            <div class="flex flex-col items-center text-gray-500"><i class="fa-solid fa-circle-user"></i><span class="text-[9px] mt-1">You</span></div>
+        </nav>
+    </div>
+
+    <div id="gameScreen" class="hidden fixed inset-0 bg-black/95 z-[6000] flex flex-col items-center justify-center">
+        <canvas id="gameCanvas" width="320" height="400" class="bg-[#4ec0ca] border-4 border-white"></canvas>
+        <button onclick="toggleGame()" class="mt-8 text-white font-bold underline">EXIT GAME</button>
+    </div>
 
     <script>
-        // Sign In Transition
-        function signIn() {
-            const overlay = document.getElementById('loginOverlay');
-            overlay.style.transition = 'opacity 0.5s ease';
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 500);
+        function goToSubscribe() {
+            const user = document.getElementById('username').value;
+            if(user === "") { alert("Please enter a username!"); return; }
+            document.getElementById('displayUser').innerText = "@" + user;
+            document.getElementById('loginStep').classList.add('hidden');
+            document.getElementById('subStep').classList.remove('hidden');
         }
 
-        // Flappy Game Engine
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let bird = { x: 50, y: 150, v: 0, g: 0.4, jump: -7 };
-        let pipes = [];
-        let score = 0;
-        let active = false;
-        let req;
-
-        function startGame() {
-            document.getElementById('gameScreen').style.display = 'flex';
-            pipes = []; bird.y = 150; bird.v = 0; score = 0;
-            active = true;
-            loop();
+        function enterSite() {
+            document.getElementById('subStep').classList.add('hidden');
+            document.getElementById('pigeonPlatform').classList.remove('hidden');
+            document.body.style.overflow = "auto";
         }
 
-        function closeGame() {
-            active = false;
-            cancelAnimationFrame(req);
-            document.getElementById('gameScreen').style.display = 'none';
-        }
-
-        function loop() {
-            if(!active) return;
-            ctx.fillStyle = "#15202b";
-            ctx.fillRect(0,0,320,400);
-            
-            bird.v += bird.g;
-            bird.y += bird.v;
-            ctx.font = "30px serif";
-            ctx.fillText("🐦", bird.x, bird.y);
-
-            if(pipes.length === 0 || pipes[pipes.length-1].x < 150) {
-                pipes.push({x:320, h:Math.random()*150+50});
-            }
-
-            pipes.forEach((p) => {
-                p.x -= 2.5;
-                ctx.fillStyle = "#1d9bf0";
-                ctx.fillRect(p.x, 0, 45, p.h);
-                ctx.fillRect(p.x, p.h + 110, 45, 400);
-                
-                // Collision
-                if(bird.x+20 > p.x && bird.x < p.x+45 && (bird.y-15 < p.h || bird.y > p.h+95)) active = false;
-                if(p.x === 50) score++;
-            });
-            pipes = pipes.filter(p => p.x > -50);
-
-            if(bird.y > 400 || bird.y < 0) active = false;
-            
-            ctx.fillStyle = "white";
-            ctx.font = "bold 20px Arial";
-            ctx.fillText("Score: " + score, 20, 40);
-            if(active) req = requestAnimationFrame(loop);
-            else {
-                ctx.fillStyle = "rgba(255,0,0,0.5)";
-                ctx.fillRect(0,0,320,400);
-                ctx.fillStyle = "white";
-                ctx.fillText("CRASHED!", 110, 200);
-            }
-        }
-
-        window.onkeydown = (e) => { if(e.code === 'Space') bird.v = bird.jump; };
-        canvas.onmousedown = () => { bird.v = bird.jump; };
+        function toggleMenu() { document.getElementById('sidebarMenu').classList.toggle('active'); }
+        function toggleGame() { document.getElementById('gameScreen').classList.toggle('hidden'); }
     </script>
 </body>
 </html>
