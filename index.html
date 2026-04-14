@@ -3,451 +3,845 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>r/MockRed — Subscription Gate to Your Channel</title>
-  <meta name="description" content="Red-themed Reddit-like demo with a subscription gate that links to a YouTube channel." />
+  <title>PIGEON — Dark Mode, Poll Voting & Games</title>
+
+  <!-- Tailwind CDN for quick prototyping -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
+    /* Dark theme overrides */
     :root{
-      --bg:linear-gradient(180deg,#fff6f6 0%, #fff 120%);
-      --card:#fff;
-      --muted:#6b2f2f;
-      --text:#1b0b0b;
+      --bg:#000000;
+      --card:#0b0f14;
+      --muted:#9aa5b1;
+      --text:#e6eef6;
       --accent:#ff4d4f;
-      --primary:#c21a1a;
       --green-verify:#7CFC00;
-      --radius:12px;
-      --container:1100px;
-      --shadow: 0 8px 24px rgba(15,23,36,0.08);
-      font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Color Emoji";
+      --card-2:#0f1720;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      -webkit-font-smoothing:antialiased;
-      font-size:15px;
-      line-height:1.45;
-    }
-    .container{max-width:var(--container);margin:0 auto;padding:20px;}
-    header.site-header{background:rgba(255,255,255,0.9);backdrop-filter: blur(6px);border-bottom:1px solid rgba(194,26,26,0.06);position:sticky;top:0;z-index:60}
-    .header-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px}
-    .brand{font-weight:800;color:var(--primary);text-decoration:none;font-size:20px}
-    .header-actions{display:flex;gap:12px;align-items:center}
-    .search{padding:9px 12px;border-radius:10px;border:1px solid rgba(194,26,26,0.06);background:#fff;min-width:220px}
-    select{padding:9px;border-radius:10px;border:1px solid rgba(194,26,26,0.06);background:#fff}
-    .main-grid{display:grid;grid-template-columns:1fr 320px;gap:22px;padding:28px 0}
-    @media (max-width:980px){.main-grid{grid-template-columns:1fr}}
-    .compose{background:var(--card);border-radius:14px;padding:14px;border:1px solid rgba(194,26,26,0.06);margin-bottom:18px;box-shadow:var(--shadow)}
-    .compose-form{display:flex;flex-direction:column;gap:10px}
-    .compose-form input,.compose-form textarea{padding:12px;border-radius:10px;border:1px solid rgba(15,23,36,0.06);background:#fff;outline:none}
-    .compose-actions{display:flex;gap:10px;justify-content:flex-end}
-    .btn{padding:9px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700}
-    .btn.primary{background:var(--primary);color:#fff}
-    .btn.outline{background:transparent;border:1px solid rgba(15,23,36,0.06);color:var(--text)}
-    .posts{display:flex;flex-direction:column;gap:14px}
-    .post{display:grid;grid-template-columns:64px 1fr;gap:14px;background:var(--card);padding:14px;border-radius:14px;border:1px solid rgba(194,26,26,0.04);box-shadow:var(--shadow)}
-    .vote-col{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:6px}
-    .vote-btn{background:transparent;border:0;cursor:pointer;color:var(--muted);font-size:18px}
-    .vote-btn.active{color:var(--accent);font-weight:800}
-    .score{font-weight:800;color:var(--text)}
-    .post-main h3{margin:0;font-size:17px;color:var(--primary)}
-    .meta{font-size:13px;color:var(--muted);margin-top:6px}
-    .post-body{margin-top:10px;color:var(--text);white-space:pre-wrap}
-    .post-actions{display:flex;gap:12px;margin-top:12px;align-items:center}
-    .comments{margin-top:12px;border-top:1px dashed rgba(194,26,26,0.04);padding-top:12px}
-    .comment{padding:10px;border-radius:10px;background:#fff6f6;border:1px solid rgba(194,26,26,0.02);margin-bottom:8px}
-    .sidebar .card{background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(194,26,26,0.04);margin-bottom:12px;box-shadow:var(--shadow)}
-    .trending li{margin-bottom:8px;color:var(--muted)}
+    html,body,#app{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+    .card{background:linear-gradient(180deg,var(--card), var(--card-2));border:1px solid rgba(255,255,255,0.03);border-radius:14px}
+    .shadow-soft{box-shadow:0 8px 28px rgba(2,6,23,0.6)}
+    .dash-box{border:2px dashed rgba(255,255,255,0.06);background:rgba(255,255,255,0.01);border-radius:10px}
+    .fab{width:68px;height:68px;border-radius:9999px;display:flex;align-items:center;justify-content:center}
+    .verifying{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:80;color:var(--green-verify);flex-direction:column;gap:12px;font-weight:800}
+    canvas.game-canvas{width:100%;height:360px;border-radius:10px;display:block}
+    a{color:var(--accent)}
+    .muted{color:var(--muted)}
     .small{font-size:13px;color:var(--muted)}
-    .no-posts{padding:28px;text-align:center;color:var(--muted);background:linear-gradient(180deg, rgba(194,26,26,0.02), rgba(194,26,26,0.01));border-radius:12px}
-    @media (max-width:600px){
-      .post{grid-template-columns:1fr}
-      .vote-col{flex-direction:row;order:2;gap:12px;justify-content:flex-start}
-      .post-main{order:1}
-    }
-
-    /* Gate overlay */
-    .gate-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter: blur(2px)}
-    .gate-card{width:min(720px,94%);max-width:720px;background:linear-gradient(180deg,#fff,#fff6f6);border-radius:14px;padding:26px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 24px 64px rgba(0,0,0,0.55)}
-    .gate-header{display:flex;align-items:center;gap:14px}
-    .gate-brand{font-weight:900;color:var(--primary);font-size:20px}
-    .gate-lead{margin-top:8px;color:var(--muted)}
-    .gate-form{display:flex;gap:10px;margin-top:16px;align-items:center}
-    .gate-form input[type="email"]{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(15,23,36,0.06)}
-    .gate-actions{display:flex;gap:10px;align-items:center;margin-top:14px}
-    .gate-note{font-size:13px;color:var(--muted);margin-top:12px}
-
-    /* Verifying overlay */
-    .verifying-overlay{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:400;flex-direction:column;gap:12px;color:var(--green-verify);font-weight:800;font-size:20px}
-    .verifying-overlay .spinner{width:46px;height:46px;border-radius:50%;border:4px solid rgba(124,252,0,0.14);border-top-color:var(--green-verify);animation:spin 1s linear infinite;box-shadow:0 8px 28px rgba(0,0,0,0.6)}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    a.muted-link{color:#ff7b7b;text-decoration:none;font-weight:700}
   </style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="#" id="home-link">r/MockRed</a>
-      <div class="header-actions">
-        <input id="search" class="search" placeholder="Search posts..." aria-label="Search posts" />
-        <select id="sort" aria-label="Sort posts">
-          <option value="hot">Hot</option>
-          <option value="new">New</option>
-          <option value="top">Top</option>
-        </select>
+<div id="app" class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40" style="backdrop-filter: blur(6px); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-bottom:1px solid rgba(255,255,255,0.02)">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <button id="menu-btn" class="p-2 rounded hover:bg-white/3">
+        <svg class="w-6 h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+
+      <!-- Logo -->
+      <div id="logo" class="flex items-center gap-3 cursor-pointer select-none">
+        <div class="text-2xl">🕊️📜<span class="inline-block ml-[-6px]">🔴</span></div>
+        <div class="font-extrabold tracking-wide">PIGEON</div>
+      </div>
+
+      <div class="flex-1 max-w-xl">
+        <input id="search" type="search" placeholder="Search posts, users or media..." class="w-full px-3 py-2 rounded-lg border border-white/6 bg-white/2" />
+      </div>
+
+      <div id="user-area" class="flex items-center gap-3">
+        <div id="signed-out" class="flex items-center gap-2">
+          <button id="signin-btn" class="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Sign in</button>
+        </div>
+        <div id="signed-in" class="hidden items-center gap-3">
+          <img id="user-photo" class="w-8 h-8 rounded-full" src="" alt="avatar"/>
+          <div class="text-sm" id="user-name"></div>
+          <button id="signout-btn" class="px-3 py-1 border rounded text-sm">Sign out</button>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="container main-grid" id="main-content" aria-hidden="true">
-    <section class="feed" aria-label="Posts feed">
-      <div class="compose">
-        <form id="compose-form" class="compose-form" aria-label="Create post">
-          <input id="compose-title" type="text" placeholder="Post title" required minlength="3" aria-label="Post title" />
-          <div style="display:flex;gap:10px;">
-            <input id="compose-author" type="text" placeholder="u/username (optional)" aria-label="Author" style="flex:1"/>
-            <select id="compose-type" aria-label="Type" style="width:140px">
-              <option value="text">Text</option>
-              <option value="link">Link</option>
-            </select>
-          </div>
-          <textarea id="compose-body" placeholder="Write something or paste a link..." rows="3" aria-label="Post body"></textarea>
-          <div class="compose-actions">
-            <button class="btn outline" type="reset">Reset</button>
-            <button class="btn primary" type="submit">Post</button>
-          </div>
-        </form>
-      </div>
+  <!-- Main -->
+  <div class="flex-1 max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <main id="feed" class="lg:col-span-2 space-y-4">
+      <div class="card p-4">
+        <div class="flex items-start gap-3">
+          <img id="compose-avatar" class="w-10 h-10 rounded-full" src="" alt="you"/>
+          <form id="compose-form" class="flex-1 space-y-3">
+            <div class="flex gap-2">
+              <input id="compose-title" placeholder="Title (required)" class="flex-1 px-3 py-2 rounded border border-white/6 bg-transparent" required />
+              <select id="compose-type" class="px-3 py-2 rounded border border-white/6 bg-transparent">
+                <option value="text">Text</option>
+                <option value="link">Link</option>
+                <option value="poll">Poll</option>
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+                <option value="voice">Voice</option>
+              </select>
+            </div>
 
-      <div id="posts" class="posts" role="list" aria-live="polite"></div>
-    </section>
+            <textarea id="compose-text" rows="3" placeholder="Write something..." class="w-full px-3 py-2 rounded border border-white/6 bg-transparent"></textarea>
 
-    <aside class="sidebar" aria-label="Sidebar">
-      <div class="card about">
-        <h3 style="margin:0;color:var(--primary)">About r/MockRed</h3>
-        <p class="small" style="margin-top:8px">A red-themed demo. This demo requires a quick manual subscription to the channel to continue.</p>
-      </div>
+            <!-- Media area -->
+            <div id="compose-media-area" class="hidden space-y-2">
+              <div class="dash-box p-3 flex items-center gap-3">
+                <i class="fa-solid fa-plus text-slate-400"></i>
+                <input id="compose-media-url" placeholder="Media URL (image/video/audio) or embed link" class="flex-1 bg-transparent outline-none" />
+              </div>
+            </div>
 
-      <div class="card rules">
-        <h4 style="margin:0;color:var(--primary)">Sort & Filters</h4>
-        <ul class="small" style="margin-top:8px">
-          <li>Sort by Hot / New / Top</li>
-          <li>Search filters titles & body</li>
-        </ul>
-      </div>
+            <!-- Poll options area -->
+            <div id="compose-poll-area" class="hidden space-y-2">
+              <div class="flex gap-2">
+                <input class="poll-opt px-3 py-2 rounded border border-white/6 bg-transparent" placeholder="Option 1" />
+                <input class="poll-opt px-3 py-2 rounded border border-white/6 bg-transparent" placeholder="Option 2" />
+              </div>
+              <div class="flex gap-2">
+                <button id="add-poll-opt" type="button" class="px-3 py-1 rounded bg-white/5">Add option</button>
+                <div class="small muted">Min 2, max 5</div>
+              </div>
+            </div>
 
-      <div class="card trending">
-        <h4 style="margin:0;color:var(--primary)">Trending</h4>
-        <ol id="trending-list" class="trending small" style="margin-top:8px"></ol>
-      </div>
-    </aside>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container" style="padding:18px 0;text-align:center;color:var(--muted)">
-      <small>Demo — subscription gate links to your YouTube channel and uses manual verification (local only).</small>
-    </div>
-  </footer>
-
-  <!-- Subscription gate (manual flow to a YouTube channel) -->
-  <div id="gate" class="gate-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="gate-title">
-    <div class="gate-card" role="document">
-      <div class="gate-header">
-        <div>
-          <div class="gate-brand">r/MockRed</div>
-          <div class="gate-lead">Please subscribe to continue</div>
+            <div class="flex justify-between items-center">
+              <div class="text-sm muted" id="compose-hint">Posts save to Firestore (requires your project).</div>
+              <div class="flex gap-2">
+                <button id="compose-reset" type="button" class="px-3 py-1 rounded border border-white/6">Reset</button>
+                <button id="compose-submit" type="button" class="px-4 py-2 rounded bg-red-600 text-white">Publish</button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
 
-      <p class="gate-note">Click "Subscribe on YouTube" to open the channel in a new tab, subscribe there, then return and click "I subscribed — Verify". If you prefer, enter an email (optional) before verifying.</p>
+      <!-- posts list -->
+      <div id="posts-list" class="space-y-4"></div>
+    </main>
 
-      <div style="margin-top:12px">
-        <label class="small" for="gate-email">Email (optional)</label>
-        <input id="gate-email" type="email" placeholder="you@domain.com" style="width:100%;margin-top:8px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)"/>
+    <aside class="space-y-4">
+      <div id="friends-card" class="card p-4">
+        <div class="flex items-center justify-between">
+          <div class="font-semibold">Friends</div>
+          <div class="text-sm muted">online</div>
+        </div>
+        <div class="mt-3">
+          <input id="friends-search" placeholder="Search friends..." class="w-full px-3 py-2 rounded border border-white/6 bg-transparent"/>
+        </div>
+        <ul id="friends-list" class="mt-3 space-y-2 max-h-64 overflow-auto"></ul>
       </div>
 
-      <div class="gate-actions" style="margin-top:14px">
-        <button id="open-channel" class="btn outline" type="button">Subscribe on YouTube</button>
-        <button id="verify-subscribed" class="btn primary" type="button">I subscribed — Verify</button>
+      <div class="card p-4">
+        <div class="font-semibold mb-2">Trending</div>
+        <ol id="trending" class="list-decimal list-inside small"></ol>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Bottom bar with + menu -->
+  <div class="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40">
+    <div class="pointer-events-auto flex items-center gap-4">
+      <div id="plus-menu" class="flex items-center gap-2 card p-2 rounded-full">
+        <button data-action="image" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-image text-red-400"></i></button>
+        <button data-action="video" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-film text-red-400"></i></button>
+        <button data-action="poll" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-poll text-red-400"></i></button>
+        <button data-action="voice" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-microphone text-red-400"></i></button>
+        <button data-action="text" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-font text-red-400"></i></button>
       </div>
 
-      <div style="margin-top:12px" class="small">
-        Channel: <a id="channel-link" href="https://www.youtube.com/@Ultra-wk8ed" target="_blank" rel="noopener noreferrer">https://www.youtube.com/@Ultra-wk8ed</a>
+      <button id="fab" class="fab card">
+        <i class="fa-solid fa-plus text-red-400 text-2xl"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- DM modal -->
+  <div id="dm-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center">
+    <div class="w-full max-w-md card p-4">
+      <div class="flex items-center justify-between">
+        <div class="font-semibold" id="dm-with">Chat</div>
+        <button id="dm-close" class="text-slate-300"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="dm-thread" class="mt-3 max-h-56 overflow-auto space-y-2 small muted"></div>
+      <div class="mt-3 flex gap-2">
+        <input id="dm-input" class="flex-1 px-3 py-2 rounded border border-white/6 bg-transparent" placeholder="Message..." />
+        <button id="dm-send" class="px-3 py-2 bg-red-600 text-white rounded">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- Verifying overlay -->
-  <div id="verifying" class="verifying-overlay" style="display:none" aria-hidden="true" role="status" aria-live="polite">
-    <div class="spinner" aria-hidden="true"></div>
+  <!-- Games modal (Flappy + Catch) -->
+  <div id="game-modal" class="fixed inset-0 bg-black/70 z-60 hidden items-center justify-center">
+    <div class="w-[780px] max-w-[95%] card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="font-bold">Pigeon Games</div>
+          <div class="small muted">Flappy Pigeon & Catch-the-Pigeon</div>
+        </div>
+        <div class="flex gap-2">
+          <button id="game-type-flappy" class="px-3 py-1 border rounded small">Flappy</button>
+          <button id="game-type-catch" class="px-3 py-1 border rounded small">Catch</button>
+          <button id="game-close" class="text-slate-300"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <canvas id="game-canvas" class="game-canvas"></canvas>
+      <div class="mt-3 text-sm text-slate-400">Score: <span id="game-score">0</span></div>
+    </div>
+  </div>
+
+  <!-- Subscription Gate -->
+  <div id="gate" class="fixed inset-0 bg-black/80 z-70 flex items-center justify-center">
+    <div class="w-[720px] max-w-[94%] card p-6">
+      <div class="flex items-start gap-4">
+        <div class="text-4xl">🕊️📜<span class="ml-[-8px]">🔴</span></div>
+        <div>
+          <h2 class="text-2xl font-extrabold">Subscribe to continue</h2>
+          <p class="muted mt-2">Please subscribe to the channel, then unlock and sign in with Google to view the feed.</p>
+          <div class="mt-4 flex gap-3">
+            <button id="open-channel-btn" class="px-4 py-2 rounded bg-red-600 text-white">Open Channel</button>
+            <button id="unlock-btn" class="px-4 py-2 rounded border">Unlock (Sign-in)</button>
+          </div>
+          <p class="text-xs muted mt-3">We attempt a deep link to YouTube app; fallback to web. This demo uses Firebase Auth and Firestore.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verifying overlay (black + green) -->
+  <div id="verifying" class="verifying hidden">
+    <div style="width:56px;height:56px;border-radius:9999px;border:4px solid rgba(124,252,0,0.12);border-top-color:var(--green-verify); animation:spin 1s linear infinite;"></div>
     <div id="verifying-text">Verifying subscription...</div>
   </div>
 
-  <script>
-    (function(){
-      const CHANNEL_URL = 'https://www.youtube.com/@Ultra-wk8ed';
-      const SUB_KEY = 'rm_subscribed_channel_v1';
-      const POSTS_KEY = 'rm_posts_v1';
-      const VOTES_KEY = 'rm_votes_v1';
+</div>
 
-      const gate = document.getElementById('gate');
-      const openChannelBtn = document.getElementById('open-channel');
-      const verifyBtn = document.getElementById('verify-subscribed');
-      const gateEmail = document.getElementById('gate-email');
-      const verifying = document.getElementById('verifying');
-      const verifyingText = document.getElementById('verifying-text');
-      const mainContent = document.getElementById('main-content');
+<!-- Firebase libs (compat for quick prototyping) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
-      const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
-      const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+<script>
+/* ====== CONFIG: replace with your Firebase project config ======
+  1) Replace FIREBASE_CONFIG fields below.
+  2) In Firebase console enable Authentication -> Google and Firestore.
+  3) Use Firestore security rules that require auth for writes.
+*/
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  // ...other fields
+};
+const CHANNEL_ID_OR_USER = "Ultra-wk8ed";
 
-      // If user is already verified, enter immediately
-      const sub = load(SUB_KEY);
-      if (!sub) showGate(); else enterSite();
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-      function showGate(){
-        gate.style.display = 'flex';
-        mainContent.setAttribute('aria-hidden','true');
-        document.body.style.overflow = 'hidden';
-        setTimeout(()=>gateEmail.focus(),150);
-      }
+const SUB_CLICKED_KEY = 'pigeon_sub_clicked_v1';
+const VERIFIED_KEY = 'pigeon_verified_v1';
 
-      function enterSite(){
-        gate.style.display = 'none';
-        verifying.style.display = 'none';
-        mainContent.setAttribute('aria-hidden','false');
-        document.body.style.overflow = '';
-        initApp();
-      }
+const gate = document.getElementById('gate');
+const openChannelBtn = document.getElementById('open-channel-btn');
+const unlockBtn = document.getElementById('unlock-btn');
+const verifying = document.getElementById('verifying');
+const verifyingText = document.getElementById('verifying-text');
 
-      // Open channel in new tab
-      openChannelBtn.addEventListener('click', () => {
-        window.open(CHANNEL_URL, '_blank', 'noopener');
-        // helpful hint: optionally focus back
-        alert('Channel opened in a new tab. Subscribe there, then return and click "I subscribed — Verify".');
+const signinBtn = document.getElementById('signin-btn');
+const signoutBtn = document.getElementById('signout-btn');
+const signedInArea = document.getElementById('signed-in');
+const signedOutArea = document.getElementById('signed-out');
+const userNameEl = document.getElementById('user-name');
+const userPhotoEl = document.getElementById('user-photo');
+
+const postsList = document.getElementById('posts-list');
+const composeAvatar = document.getElementById('compose-avatar');
+const composeSubmit = document.getElementById('compose-submit');
+const composeReset = document.getElementById('compose-reset');
+const composeTitle = document.getElementById('compose-title');
+const composeText = document.getElementById('compose-text');
+const composeType = document.getElementById('compose-type');
+const composeMediaArea = document.getElementById('compose-media-area');
+const composeMediaUrl = document.getElementById('compose-media-url');
+const composePollArea = document.getElementById('compose-poll-area');
+const addPollOptBtn = document.getElementById('add-poll-opt');
+
+const friendsList = document.getElementById('friends-list');
+const dmModal = document.getElementById('dm-modal');
+const dmWith = document.getElementById('dm-with');
+const dmThread = document.getElementById('dm-thread');
+const dmInput = document.getElementById('dm-input');
+const dmSend = document.getElementById('dm-send');
+const dmClose = document.getElementById('dm-close');
+
+const menuBtn = document.getElementById('menu-btn');
+const friendsCard = document.getElementById('friends-card');
+const trendingEl = document.getElementById('trending');
+
+const fab = document.getElementById('fab');
+const plusMenu = document.getElementById('plus-menu');
+
+const logo = document.getElementById('logo');
+const gameModal = document.getElementById('game-modal');
+const gameCanvas = document.getElementById('game-canvas');
+const gameClose = document.getElementById('game-close');
+const gameScoreEl = document.getElementById('game-score');
+const gameTypeFlappy = document.getElementById('game-type-flappy');
+const gameTypeCatch = document.getElementById('game-type-catch');
+
+let currentUser = null;
+let postsUnsub = null;
+
+/* Utility: open YouTube deep link then fallback to web */
+function openYouTubeChannel(channel) {
+  const webFallback = `https://www.youtube.com/${channel.startsWith('@') ? channel : 'c/' + channel}`;
+  try {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = `vnd.youtube://channel/${channel}`;
+    document.body.appendChild(iframe);
+    setTimeout(()=>document.body.removeChild(iframe), 500);
+  } catch {}
+  window.open(webFallback, '_blank', 'noopener');
+  localStorage.setItem(SUB_CLICKED_KEY, JSON.stringify({ clickedAt: Date.now(), channel }));
+}
+
+/* Verifying overlay helpers */
+function showVerifying(msg = 'Verifying subscription...') {
+  verifyingText.textContent = msg;
+  verifying.classList.remove('hidden');
+}
+function hideVerifying() { verifying.classList.add('hidden'); }
+
+/* Gate logic */
+openChannelBtn.addEventListener('click', () => {
+  openYouTubeChannel(CHANNEL_ID_OR_USER);
+  alert('Channel opened. Subscribe in YouTube, then click Unlock and sign in.');
+});
+
+unlockBtn.addEventListener('click', () => {
+  const clicked = JSON.parse(localStorage.getItem(SUB_CLICKED_KEY) || 'null');
+  if (!clicked) { alert('Click "Open Channel" first.'); return; }
+  showVerifying('Opening Google Sign-In...');
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).then(result => {
+    currentUser = result.user;
+    const verified = { uid: currentUser.uid, email: currentUser.email, channel: CHANNEL_ID_OR_USER, at: Date.now() };
+    localStorage.setItem(VERIFIED_KEY, JSON.stringify(verified));
+    hideVerifying();
+    gate.classList.add('hidden');
+    enterApp();
+  }).catch(err => {
+    hideVerifying();
+    alert('Sign-in cancelled or failed: ' + (err.message || err));
+  });
+});
+
+/* Header sign-in/out */
+signinBtn.addEventListener('click', () => {
+  showVerifying('Signing in...');
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).then(res => {
+    currentUser = res.user;
+    localStorage.setItem(VERIFIED_KEY, JSON.stringify({ uid: currentUser.uid, email: currentUser.email, at: Date.now() }));
+    hideVerifying();
+    gate.classList.add('hidden');
+    enterApp();
+  }).catch(err => { hideVerifying(); alert('Sign-in failed: ' + err.message); });
+});
+signoutBtn.addEventListener('click', async () => {
+  if (!confirm('Sign out?')) return;
+  await auth.signOut();
+  currentUser = null;
+  signedInArea.classList.add('hidden');
+  signedOutArea.classList.remove('hidden');
+  location.reload();
+});
+
+/* Auth state listener */
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    signedOutArea.classList.add('hidden');
+    signedInArea.classList.remove('hidden');
+    userNameEl.textContent = user.displayName || user.email;
+    userPhotoEl.src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
+    composeAvatar.src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
+  } else {
+    currentUser = null;
+    signedInArea.classList.add('hidden');
+    signedOutArea.classList.remove('hidden');
+    composeAvatar.src = 'https://www.gravatar.com/avatar/?d=mp';
+  }
+});
+
+/* on load: gate or app */
+window.addEventListener('load', () => {
+  const verified = JSON.parse(localStorage.getItem(VERIFIED_KEY) || 'null');
+  if (!verified) {
+    gate.classList.remove('hidden');
+  } else {
+    gate.classList.add('hidden');
+    enterApp();
+  }
+});
+
+/* Enter application: wire compose, feed, friends, UI */
+function enterApp() {
+  bindCompose();
+  bindFeedRealtime();
+  populateFriends();
+  bindUIHelpers();
+}
+
+/* Compose bindings (supports poll creation) */
+function bindCompose() {
+  composeType.addEventListener('change', () => {
+    const t = composeType.value;
+    composeMediaArea.classList.toggle('hidden', !(t === 'image' || t === 'video' || t === 'voice' || t === 'link'));
+    composePollArea.classList.toggle('hidden', t !== 'poll');
+  });
+
+  addPollOptBtn.addEventListener('click', () => {
+    const opts = composePollArea.querySelectorAll('.poll-opt');
+    if (opts.length >= 5) return alert('Max 5 options');
+    const input = document.createElement('input');
+    input.className = 'poll-opt px-3 py-2 rounded border border-white/6 bg-transparent';
+    input.placeholder = 'Option ' + (opts.length + 1);
+    composePollArea.querySelector('.flex').appendChild(input);
+  });
+
+  composeReset.addEventListener('click', () => {
+    composeTitle.value = '';
+    composeText.value = '';
+    composeMediaUrl.value = '';
+    composeType.value = 'text';
+    composeMediaArea.classList.add('hidden');
+    composePollArea.classList.add('hidden');
+    // reset poll options to 2
+    const pollFlex = composePollArea.querySelector('.flex');
+    if (pollFlex) {
+      pollFlex.innerHTML = '';
+      const i1 = document.createElement('input'); i1.className='poll-opt px-3 py-2 rounded border border-white/6 bg-transparent'; i1.placeholder='Option 1';
+      const i2 = document.createElement('input'); i2.className='poll-opt px-3 py-2 rounded border border-white/6 bg-transparent'; i2.placeholder='Option 2';
+      pollFlex.appendChild(i1); pollFlex.appendChild(i2);
+    }
+  });
+
+  composeSubmit.addEventListener('click', async () => {
+    if (!auth.currentUser) { alert('Sign in to post'); return; }
+    const title = composeTitle.value.trim();
+    if (!title) { alert('Title required'); composeTitle.focus(); return; }
+    const type = composeType.value;
+    const text = composeText.value.trim();
+    const mediaURL = (composeMediaUrl.value || '').trim() || null;
+    const post = {
+      uid: auth.currentUser.uid,
+      displayName: auth.currentUser.displayName || auth.currentUser.email,
+      title, text,
+      type,
+      mediaURL: mediaURL || null,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      likes: 0
+    };
+
+    if (type === 'poll') {
+      const opts = Array.from(composePollArea.querySelectorAll('.poll-opt')).map(n => n.value.trim()).filter(Boolean);
+      if (opts.length < 2) return alert('Add at least 2 poll options');
+      if (opts.length > 5) return alert('Max 5 options');
+      post.options = opts.map(o => ({ label: o, count: 0 }));
+    }
+
+    try {
+      await db.collection('posts').add(post);
+      composeTitle.value = '';
+      composeText.value = '';
+      composeMediaUrl.value = '';
+      composeMediaArea.classList.add('hidden');
+      composePollArea.classList.add('hidden');
+    } catch (err) {
+      console.error('Failed to publish', err);
+      alert('Failed to publish: ' + err.message);
+    }
+  });
+}
+
+/* Live feed: onSnapshot updates */
+function bindFeedRealtime() {
+  if (postsUnsub) postsUnsub();
+  postsUnsub = db.collection('posts').orderBy('timestamp', 'desc')
+    .onSnapshot(snapshot => {
+      postsList.innerHTML = '';
+      const trendingMap = new Map();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const id = doc.id;
+        const node = renderPost(id, data);
+        postsList.appendChild(node);
+        trendingMap.set((data.title||'').slice(0,40), (trendingMap.get((data.title||'').slice(0,40))||0)+1);
       });
-
-      // Manual verify button (user confirms they subscribed)
-      verifyBtn.addEventListener('click', async () => {
-        const emailVal = gateEmail.value.trim();
-        // show verifying overlay
-        showVerifying('Verifying subscription...');
-        // Simulate a verification delay
-        await new Promise(r => setTimeout(r, 1400));
-        // NOTE: Real automated verification requires Google OAuth + server to query subscriptions.
-        // Here we accept the user's manual confirmation for the demo.
-        save(SUB_KEY, { channel: CHANNEL_URL, email: emailVal || null, verifiedAt: Date.now() });
-        showVerifying('Subscription verified — welcome!');
-        await new Promise(r => setTimeout(r, 700));
-        hideVerifying();
-        enterSite();
+      trendingEl.innerHTML = '';
+      Array.from(trendingMap.keys()).slice(0,5).forEach(t => {
+        const li = document.createElement('li'); li.textContent = t; trendingEl.appendChild(li);
       });
+    }, err => console.error('feed error', err));
+}
 
-      function showVerifying(msg){
-        verifyingText.textContent = msg || 'Verifying subscription...';
-        verifying.style.display = 'flex';
+/* Render a post and attach event listeners. Poll posts get special UI and vote handler */
+function renderPost(id, p) {
+  const wrapper = document.createElement('article');
+  wrapper.className = 'card p-4 shadow-soft';
+  const time = p.timestamp && p.timestamp.toDate ? timeAgo(p.timestamp.toDate()) : 'now';
+  wrapper.innerHTML = `
+    <div class="flex items-start gap-3">
+      <img class="w-11 h-11 rounded-full" src="${escapeHtml(p.photoURL||'https://www.gravatar.com/avatar/?d=mp')}" />
+      <div class="flex-1">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-semibold">${escapeHtml(p.displayName||'Anonymous')}</div>
+            <div class="text-xs muted">${escapeHtml(p.title||'')}</div>
+          </div>
+          <div class="text-xs muted">${time}</div>
+        </div>
+
+        <div class="mt-3 text-slate-200">${escapeHtml(p.text||'')}</div>
+
+        <div class="mt-3" id="media-${id}">
+          ${p.mediaURL ? renderMedia(p.mediaURL) : ''}
+        </div>
+
+        <div class="mt-3 flex items-center gap-3 text-sm">
+          <button data-id="${id}" class="like-btn text-muted hover:text-red-400"><i class="fa-regular fa-heart"></i> <span class="likes-count">${p.likes||0}</span></button>
+          <button data-id="${id}" class="comment-btn text-muted hover:text-slate-200"><i class="fa-regular fa-comment"></i> Comment</button>
+          <button data-id="${id}" class="share-btn text-muted hover:text-slate-200"><i class="fa-solid fa-share"></i> Share</button>
+        </div>
+
+        <div class="mt-3" id="poll-area-${id}"></div>
+      </div>
+    </div>
+  `;
+
+  const likeBtn = wrapper.querySelector('.like-btn');
+  const likesCountEl = wrapper.querySelector('.likes-count');
+  likeBtn.addEventListener('click', async () => {
+    if (!auth.currentUser) { alert('Sign in to like'); return; }
+    const ref = db.collection('posts').doc(id);
+    try {
+      await ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
+    } catch (e) {
+      await ref.set({ likes: 1 }, { merge: true });
+    }
+  });
+
+  const commentBtn = wrapper.querySelector('.comment-btn');
+  commentBtn.addEventListener('click', async () => {
+    const text = prompt('Enter comment (demo)');
+    if (!text) return;
+    try {
+      await db.collection('posts').doc(id).collection('comments').add({
+        uid: auth.currentUser ? auth.currentUser.uid : null,
+        displayName: auth.currentUser ? (auth.currentUser.displayName||auth.currentUser.email) : 'anon',
+        text,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      alert('Comment saved (demo).');
+    } catch (e) { alert('Failed to save comment: ' + e.message); }
+  });
+
+  // If this is a poll post, render poll UI and set up live updates via post snapshot
+  if (p.type === 'poll') {
+    const pollArea = wrapper.querySelector('#poll-area-' + id);
+    // subscribe to this post's snapshot to get live option counts
+    db.collection('posts').doc(id).onSnapshot(doc => {
+      const data = doc.data();
+      renderPollUI(id, data, pollArea);
+    }, err => console.error('poll snapshot error', err));
+  }
+
+  return wrapper;
+}
+
+/* Render media helper */
+function renderMedia(url) {
+  const u = String(url).trim();
+  if (/youtube\.com|youtu\.be/i.test(u)) {
+    const vid = extractYoutubeId(u);
+    if (vid) return `<div class="mt-2 rounded overflow-hidden"><iframe class="w-full h-56" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe></div>`;
+  }
+  if (/\.(png|jpg|jpeg|webp|gif)$/i.test(u)) return `<img src="${escapeHtml(u)}" class="w-full rounded" />`;
+  if (/\.mp4/i.test(u)) return `<video controls class="w-full rounded"><source src="${escapeHtml(u)}"></video>`;
+  if (/\.mp3|\.wav|\.ogg/i.test(u)) return `<audio controls class="w-full"><source src="${escapeHtml(u)}" /></audio>`;
+  return `<a href="${escapeHtml(u)}" target="_blank" class="text-red-400 underline">${escapeHtml(u)}</a>`;
+}
+
+/* Poll UI render + vote handler */
+async function renderPollUI(postId, postData, container) {
+  container.innerHTML = '';
+  if (!postData || !postData.options) { container.innerHTML = '<div class="small muted">Poll data missing</div>'; return; }
+  const uid = auth.currentUser ? auth.currentUser.uid : null;
+  // show options with counts
+  const total = (postData.options || []).reduce((s,o) => s + (o.count||0), 0) || 0;
+  postData.options.forEach((opt, idx) => {
+    const percent = total ? Math.round(((opt.count||0) / total) * 100) : 0;
+    const optWrap = document.createElement('div');
+    optWrap.className = 'mb-2';
+    optWrap.innerHTML = `
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex-1 text-slate-200">${escapeHtml(opt.label)}</div>
+        <div class="text-sm muted">${opt.count || 0} · ${percent}%</div>
+      </div>
+      <div class="w-full bg-white/4 h-2 rounded mt-1 overflow-hidden"><div style="width:${percent}%" class="bg-red-500 h-2"></div></div>
+    `;
+    // vote button
+    const voteBtn = document.createElement('button');
+    voteBtn.className = 'mt-2 px-3 py-1 rounded border border-white/6 text-sm';
+    voteBtn.textContent = 'Vote';
+    voteBtn.addEventListener('click', async () => {
+      if (!auth.currentUser) { alert('Sign in to vote'); return; }
+      await castPollVote(postId, idx);
+    });
+    optWrap.appendChild(voteBtn);
+    container.appendChild(optWrap);
+  });
+
+  // Check if current user already voted: query pollVotes subcollection for doc id = uid
+  if (uid) {
+    try {
+      const voteDoc = await db.collection('posts').doc(postId).collection('pollVotes').doc(uid).get();
+      if (voteDoc.exists) {
+        const vote = voteDoc.data();
+        const info = document.createElement('div');
+        info.className = 'small muted mt-2';
+        info.textContent = `You voted for option ${vote.option + 1}`;
+        container.appendChild(info);
       }
-      function hideVerifying(){ verifying.style.display = 'none'; }
+    } catch (e) { console.error('poll vote check', e); }
+  } else {
+    const info = document.createElement('div'); info.className='small muted mt-2'; info.textContent='Sign in to vote.'; container.appendChild(info);
+  }
+}
 
-      // The rest: same app logic (posts/votes)
-      function initApp(){
-        const id = () => 'p_' + Math.random().toString(36).slice(2,9);
-        const starter = [
-          { id: id(), title: 'Welcome to r/MockRed!', author: 'moderator', body: 'This demo links to your channel. Upvote posts you like — votes persist locally.', ts: Date.now()-1000*60*60, score: 8, comments: [{id:id(),author:'alice',text:'Nice demo!'}] },
-          { id: id(), title: 'Subscribe to the channel to enter', author: 'system', body: 'Thanks for supporting the channel!', ts: Date.now()-1000*60*30, score: 3, comments: [] },
-        ];
-        let posts = load(POSTS_KEY) || starter;
-        let votes = load(VOTES_KEY) || {};
+/* Cast poll vote with transaction to prevent double votes */
+async function castPollVote(postId, optionIndex) {
+  if (!auth.currentUser) { alert('Sign in to vote'); return; }
+  const uid = auth.currentUser.uid;
+  const postRef = db.collection('posts').doc(postId);
+  const voteRef = postRef.collection('pollVotes').doc(uid);
+  try {
+    await db.runTransaction(async tx => {
+      const voteDoc = await tx.get(voteRef);
+      if (voteDoc.exists) throw new Error('You already voted');
+      const postDoc = await tx.get(postRef);
+      if (!postDoc.exists) throw new Error('Post not found');
+      const data = postDoc.data();
+      const options = (data.options || []).slice();
+      if (optionIndex < 0 || optionIndex >= options.length) throw new Error('Invalid option');
+      options[optionIndex].count = (options[optionIndex].count || 0) + 1;
+      tx.update(postRef, { options });
+      tx.set(voteRef, { uid, option: optionIndex, at: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+    // success; UI will update by onSnapshot listener on post
+  } catch (err) {
+    if (err && err.message === 'You already voted') alert('You already voted in this poll');
+    else alert('Voting failed: ' + (err.message || err));
+  }
+}
 
-        const postsRoot = document.getElementById('posts');
-        const composeForm = document.getElementById('compose-form');
-        const searchInput = document.getElementById('search');
-        const sortSelect = document.getElementById('sort');
-        const trendingList = document.getElementById('trending-list');
+/* Helpers */
+function extractYoutubeId(url){
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
+  } catch (e) {}
+  return null;
+}
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - d.getTime())/1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm';
+  if (s < 86400) return Math.floor(s/3600) + 'h';
+  return Math.floor(s/86400) + 'd';
+}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"'\/]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[c]); }
 
-        render();
-        populateTrending();
+/* Friends list & DM mock */
+function populateFriends() {
+  const friends = [
+    { id: 'alice', name: 'alice', online: true },
+    { id: 'bob', name: 'bob', online: false },
+    { id: 'chris', name: 'chris', online: true },
+    { id: 'dina', name: 'dina', online: true },
+  ];
+  friendsList.innerHTML = '';
+  friends.forEach(f => {
+    const li = document.createElement('li');
+    li.className = 'flex items-center justify-between p-2 rounded hover:bg-white/3 cursor-pointer';
+    li.innerHTML = `<div class="flex items-center gap-3"><img class="w-8 h-8 rounded-full" src="https://www.gravatar.com/avatar/${f.id}?d=identicon" /><div><div class="font-medium">${f.name}</div><div class="small muted">${f.online ? 'online' : 'offline'}</div></div></div><button class="p-2 text-slate-300 dm-open"><i class="fa-solid fa-comment"></i></button>`;
+    li.querySelector('.dm-open').addEventListener('click', () => openDM(f));
+    friendsList.appendChild(li);
+  });
+}
+function openDM(friend){
+  dmModal.classList.remove('hidden'); dmModal.classList.add('flex');
+  dmWith.textContent = 'Chat with '+friend.name;
+  dmThread.innerHTML = `<div class="small muted">Demo DM. Click send to append messages.</div>`;
+  dmSend.onclick = () => {
+    const txt = dmInput.value.trim(); if (!txt) return;
+    const m = document.createElement('div'); m.className='text-sm bg-white/4 p-2 rounded'; m.textContent = 'You: '+txt;
+    dmThread.appendChild(m); dmInput.value='';
+    dmThread.scrollTop = dmThread.scrollHeight;
+  };
+}
+dmClose.addEventListener('click', () => { dmModal.classList.add('hidden'); dmModal.classList.remove('flex'); });
 
-        composeForm.addEventListener('submit', e => {
-          e.preventDefault();
-          const title = document.getElementById('compose-title').value.trim();
-          const author = document.getElementById('compose-author').value.trim() || 'u/anon';
-          const body = document.getElementById('compose-body').value.trim();
-          if (!title || title.length < 3) return alert('Please add a title (3+ chars).');
-          const newPost = { id: id(), title, author, body, ts: Date.now(), score: 0, comments: [] };
-          posts.unshift(newPost);
-          save(POSTS_KEY, posts);
-          composeForm.reset();
-          render();
-          populateTrending();
-        });
+/* Bottom menu interactions */
+plusMenu.addEventListener('click', (e) => {
+  const action = e.target.closest('button')?.dataset?.action;
+  if (!action) return;
+  composeType.value = action === 'text' ? 'text' : action;
+  composeType.dispatchEvent(new Event('change'));
+  if (action === 'poll') {
+    composeTitle.focus();
+  } else if (action === 'image' || action==='video' || action==='voice' || action==='link') {
+    composeMediaArea.classList.remove('hidden');
+    composeMediaUrl.focus();
+  } else {
+    composeText.focus();
+  }
+});
+fab.addEventListener('click', ()=>composeTitle.focus());
 
-        searchInput.addEventListener('input', render);
-        sortSelect.addEventListener('change', render);
+/* Logo -> Games modal & game type switching */
+logo.addEventListener('click', () => { gameModal.classList.remove('hidden'); gameModal.classList.add('flex'); startGame('flappy'); });
+gameClose.addEventListener('click', () => { stopGame(); gameModal.classList.add('hidden'); gameModal.classList.remove('flex'); });
+gameTypeFlappy.addEventListener('click', ()=>startGame('flappy'));
+gameTypeCatch.addEventListener('click', ()=>startGame('catch'));
 
-        function formatTime(ts){
-          const diff = Math.floor((Date.now()-ts)/1000);
-          if (diff < 60) return diff + 's';
-          if (diff < 3600) return Math.floor(diff/60) + 'm';
-          if (diff < 86400) return Math.floor(diff/3600) + 'h';
-          return Math.floor(diff/86400) + 'd';
-        }
-        function computeHotScore(post){
-          const ageHours = Math.max(1, (Date.now()-post.ts)/1000/3600);
-          return (post.score+1) / ageHours;
-        }
+/* Games implementation: flappy + catch */
+let gRunning=false, gCtx=null, gW=0, gH=0, gBird=null, gPipes=null, gTick=0, gScore=0, gGameType='flappy';
 
-        function render(){
-          const qTerm = searchInput.value.trim().toLowerCase();
-          const sort = sortSelect.value;
-          let list = posts.slice();
+function startGame(type='flappy'){
+  stopGame();
+  gGameType = type;
+  const cvs = gameCanvas;
+  gCtx = cvs.getContext('2d');
+  cvs.width = Math.min(760, window.innerWidth - 60);
+  cvs.height = 360;
+  gW = cvs.width; gH = cvs.height;
+  gScore = 0; gameScoreEl.textContent = '0';
+  if (type==='flappy') startFlappy(cvs);
+  else startCatch(cvs);
+}
 
-          if (qTerm) list = list.filter(p => (p.title + ' ' + (p.body||'')).toLowerCase().includes(qTerm));
-          if (sort === 'new') list.sort((a,b)=>b.ts-a.ts);
-          else if (sort === 'top') list.sort((a,b)=>b.score-b.score);
-          else list.sort((a,b)=>computeHotScore(b)-computeHotScore(a));
-
-          postsRoot.innerHTML = '';
-          if (list.length === 0){
-            postsRoot.innerHTML = '<div class="no-posts">No posts match your search — create one!</div>';
-            return;
-          }
-
-          for (const p of list){
-            const item = document.createElement('article');
-            item.className = 'post';
-            item.innerHTML = `
-              <div class="vote-col" data-id="${p.id}">
-                <button class="vote-btn up" title="upvote" aria-label="upvote">▲</button>
-                <div class="score">${p.score}</div>
-                <button class="vote-btn down" title="downvote" aria-label="downvote">▼</button>
-              </div>
-              <div class="post-main">
-                <h3>${escapeHtml(p.title)}</h3>
-                <div class="meta small">u/${escapeHtml(p.author)} · ${formatTime(p.ts)} · ${p.comments.length} comments</div>
-                <div class="post-body">${renderBody(p.body)}</div>
-                <div class="post-actions small">
-                  <a href="#" class="muted-link view-comments" data-id="${p.id}">Toggle comments</a>
-                  <a href="#" class="muted-link delete-post" data-id="${p.id}">Delete</a>
-                </div>
-                <div class="comments" data-id="${p.id}" style="display:none;"></div>
-              </div>
-            `;
-            const upBtn = item.querySelector('.vote-btn.up');
-            const downBtn = item.querySelector('.vote-btn.down');
-            const scoreEl = item.querySelector('.score');
-
-            const v = votes[p.id] || 0;
-            upBtn.classList.toggle('active', v===1);
-            downBtn.classList.toggle('active', v===-1);
-
-            upBtn.addEventListener('click', (e)=>{ e.preventDefault(); handleVote(p.id,1,p,scoreEl,upBtn,downBtn); });
-            downBtn.addEventListener('click', (e)=>{ e.preventDefault(); handleVote(p.id,-1,p,scoreEl,upBtn,downBtn); });
-
-            item.querySelector('.view-comments').addEventListener('click', (e)=>{ e.preventDefault(); toggleComments(p.id); });
-            item.querySelector('.delete-post').addEventListener('click', (e)=>{ e.preventDefault(); if (!confirm('Delete this post?')) return; posts = posts.filter(x=>x.id!==p.id); save(POSTS_KEY,posts); render(); populateTrending(); });
-
-            postsRoot.appendChild(item);
-          }
-        }
-
-        function handleVote(postId, dir, post, scoreEl, upBtn, downBtn){
-          const prev = votes[postId] || 0;
-          let next = prev === dir ? 0 : dir;
-          post.score = post.score - prev + next;
-          if (next === 0) delete votes[postId]; else votes[postId] = next;
-          save(POSTS_KEY, posts);
-          save(VOTES_KEY, votes);
-          scoreEl.textContent = post.score;
-          upBtn.classList.toggle('active', next === 1);
-          downBtn.classList.toggle('active', next === -1);
-          populateTrending();
-        }
-
-        function renderBody(body){
-          if (!body) return '';
-          if (/^https?:\/\//i.test(body.trim())){
-            const url = escapeHtml(body.trim());
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-          }
-          return `<div>${escapeHtml(body)}</div>`;
-        }
-
-        function toggleComments(postId){
-          const container = document.querySelector('.comments[data-id="'+postId+'"]');
-          const post = posts.find(p=>p.id===postId);
-          if (!container) return;
-          if (container.style.display === 'none' || container.style.display === ''){
-            container.style.display = 'block';
-            container.innerHTML = '';
-            if (!post.comments || post.comments.length === 0){
-              container.innerHTML = '<div class="small muted" style="padding:8px">No comments yet.</div>';
-            } else {
-              for (const c of post.comments){
-                const cm = document.createElement('div');
-                cm.className = 'comment';
-                cm.innerHTML = `<div style="font-weight:700">${escapeHtml(c.author)}</div><div class="small" style="margin-top:6px">${escapeHtml(c.text)}</div>`;
-                container.appendChild(cm);
-              }
-            }
-            const form = document.createElement('form');
-            form.style.marginTop = '8px';
-            form.innerHTML = `
-              <input type="text" name="author" placeholder="u/username" style="width:45%;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06)"/>
-              <input type="text" name="text" placeholder="Add a comment..." style="width:calc(55% - 8px);padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);margin-left:8px"/>
-              <div style="margin-top:8px;text-align:right">
-                <button class="btn primary" type="submit">Comment</button>
-              </div>
-            `;
-            form.addEventListener('submit', (e)=>{
-              e.preventDefault();
-              const author = (form.author.value || 'u/anon').trim();
-              const text = (form.text.value || '').trim();
-              if (!text) return alert('Comment cannot be empty.');
-              post.comments.push({ id: id(), author, text });
-              save(POSTS_KEY, posts);
-              toggleComments(postId);
-              const newContainer = document.querySelector('.comments[data-id="'+postId+'"]');
-              if (newContainer) newContainer.style.display = 'block';
-              render();
-            });
-            container.appendChild(form);
-          } else {
-            container.style.display = 'none';
-          }
-        }
-
-        function populateTrending(){
-          const list = posts.slice().sort((a,b)=>b.score - a.score).slice(0,5);
-          trendingList.innerHTML = '';
-          for (const p of list){
-            const li = document.createElement('li');
-            li.innerHTML = `<a href="#" class="muted-link" data-id="${p.id}">${escapeHtml(p.title)}</a> <span class="small" style="color:var(--muted)">· ${p.score}</span>`;
-            li.querySelector('a').addEventListener('click', (e)=>{
-              e.preventDefault();
-              const roots = Array.from(document.querySelectorAll('.post'));
-              const root = roots.find(n => n.querySelector('.post-main h3')?.textContent === p.title);
-              if (root) root.scrollIntoView({behavior:'smooth', block:'center'});
-            });
-            trendingList.appendChild(li);
-          }
-        }
-
-        function id(){ return 'p_' + Math.random().toString(36).slice(2,9); }
-        function escapeHtml(s){ return String(s).replace(/[&<>"'\/]/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[c]; }); }
-
-        if (!load(POSTS_KEY)) save(POSTS_KEY, posts);
-
-        document.addEventListener('keydown', (e)=>{
-          if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey){
-            document.getElementById('compose-title').focus();
-          }
-        });
-
-        window.rm = { posts, votes, savePosts: ()=>save(POSTS_KEY, posts) };
+/* Flappy */
+function startFlappy(cvs){
+  gBird = { x:80, y:180, vy:0, r:14 };
+  gPipes = []; gTick = 0; gRunning = true;
+  const gravity = 0.5; const gap = 120;
+  function spawnPipe(){ const h = 60 + Math.random() * (gH - 200); gPipes.push({ x: gW + 20, topH: h, passed: false }); }
+  function flap(){ gBird.vy = -8; }
+  function loop(){
+    gCtx.clearRect(0,0,gW,gH);
+    gCtx.fillStyle = '#011627'; gCtx.fillRect(0,0,gW,gH);
+    gBird.vy += gravity; gBird.y += gBird.vy;
+    if (gBird.y > gH - gBird.r){ endGame(); return; }
+    if (gBird.y < gBird.r){ gBird.y = gBird.r; gBird.vy = 0; }
+    gTick++;
+    if (gTick % 90 === 0) spawnPipe();
+    for (let i=gPipes.length-1;i>=0;i--){
+      gPipes[i].x -= 2.8;
+      gCtx.fillStyle = '#2a7b2a';
+      gCtx.fillRect(gPipes[i].x, 0, 52, gPipes[i].topH);
+      gCtx.fillRect(gPipes[i].x, gPipes[i].topH + gap, 52, gH);
+      if (!gPipes[i].passed && gPipes[i].x + 52 < gBird.x){ gPipes[i].passed = true; gScore++; gameScoreEl.textContent = ''+gScore; }
+      if (gBird.x + gBird.r > gPipes[i].x && gBird.x - gBird.r < gPipes[i].x + 52) {
+        if (gBird.y - gBird.r < gPipes[i].topH || gBird.y + gBird.r > gPipes[i].topH + gap) { endGame(); return; }
       }
-    })();
-  </script>
+      if (gPipes[i].x < -60) gPipes.splice(i,1);
+    }
+    // draw bird
+    gCtx.fillStyle = '#fff'; gCtx.beginPath(); gCtx.arc(gBird.x, gBird.y, gBird.r, 0, Math.PI*2); gCtx.fill();
+    gCtx.fillStyle = '#f59e0b'; gCtx.fillRect(gBird.x-8, gBird.y-6, 16, 8);
+    if (gRunning) requestAnimationFrame(loop);
+  }
+  function keyHandler(e){ if (e.code === 'Space'){ flap(); e.preventDefault(); } }
+  cvs.addEventListener('click', flap); document.addEventListener('keydown', keyHandler);
+  gBird._cleanup = ()=>{ cvs.removeEventListener('click', flap); document.removeEventListener('keydown', keyHandler); };
+  requestAnimationFrame(loop);
+}
+
+/* Catch the pigeon: moving target user must click */
+function startCatch(cvs){
+  let target = { x: 60, y: 80, vx: 3.5, vy: 2.1, r: 22 };
+  gRunning = true; gScore = 0; gameScoreEl.textContent='0';
+  function loop(){
+    gCtx.clearRect(0,0,gW,gH);
+    gCtx.fillStyle = '#011627'; gCtx.fillRect(0,0,gW,gH);
+    target.x += target.vx; target.y += target.vy;
+    if (target.x < target.r || target.x > gW - target.r) target.vx *= -1;
+    if (target.y < target.r || target.y > gH - target.r) target.vy *= -1;
+    // bird graphic
+    gCtx.fillStyle = '#fff'; gCtx.beginPath(); gCtx.arc(target.x, target.y, target.r, 0, Math.PI*2); gCtx.fill();
+    gCtx.fillStyle = '#f59e0b'; gCtx.fillRect(target.x-10, target.y-6, 20, 8);
+    if (gRunning) requestAnimationFrame(loop);
+  }
+  function clickHandler(e){
+    const rect = cvs.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const dx = mx - target.x, dy = my - target.y;
+    if (dx*dx + dy*dy <= target.r*target.r) { gScore++; gameScoreEl.textContent = ''+gScore; }
+  }
+  cvs.addEventListener('click', clickHandler);
+  gCtx = cvs.getContext('2d');
+  requestAnimationFrame(loop);
+  gCtx._cleanup = ()=>{ cvs.removeEventListener('click', clickHandler); };
+}
+
+/* Stop current game */
+function stopGame(){
+  gRunning = false;
+  if (gBird && gBird._cleanup) gBird._cleanup();
+  if (gCtx && gCtx._cleanup) gCtx._cleanup();
+}
+
+/* UI helpers */
+function bindUIHelpers(){
+  menuBtn.addEventListener('click', ()=>friendsCard.scrollIntoView({behavior:'smooth'}));
+  document.getElementById('search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    Array.from(postsList.children).forEach(post => {
+      post.style.display = (post.textContent.toLowerCase().includes(q) ? '' : 'none');
+    });
+  });
+}
+
+/* Small CSS injection */
+(function(){ const s = document.createElement('style'); s.innerHTML = `@keyframes spin{to{transform:rotate(360deg)}}`; document.head.appendChild(s); })();
+</script>
+
+<!-- Deployment notes -->
+<!--
+  1) Add your Firebase config in FIREBASE_CONFIG above.
+  2) Firestore rules example (require auth for writes):
+     service cloud.firestore {
+       match /databases/{database}/documents {
+         match /posts/{postId} {
+           allow read: if true;
+           allow create: if request.auth != null;
+           allow update: if request.auth != null;
+         }
+         match /posts/{postId}/pollVotes/{voteId} {
+           allow read: if request.auth != null;
+           allow create: if request.auth != null && request.auth.uid == voteId;
+         }
+       }
+     }
+  3) To enable automatic subscription checking against YouTube, you'll need server-side OAuth + YouTube Data API; the demo uses a manual "Open Channel -> Sign in" flow and stores verification locally.
+-->
+
 </body>
-                </html>
+                  </html>
