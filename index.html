@@ -3,845 +3,137 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PIGEON — Dark Mode, Poll Voting & Games</title>
-
-  <!-- Tailwind CDN for quick prototyping -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <title>My Website</title>
   <style>
-    /* Dark theme overrides */
-    :root{
-      --bg:#000000;
-      --card:#0b0f14;
-      --muted:#9aa5b1;
-      --text:#e6eef6;
-      --accent:#ff4d4f;
-      --green-verify:#7CFC00;
-      --card-2:#0f1720;
-    }
-    html,body,#app{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial}
-    .card{background:linear-gradient(180deg,var(--card), var(--card-2));border:1px solid rgba(255,255,255,0.03);border-radius:14px}
-    .shadow-soft{box-shadow:0 8px 28px rgba(2,6,23,0.6)}
-    .dash-box{border:2px dashed rgba(255,255,255,0.06);background:rgba(255,255,255,0.01);border-radius:10px}
-    .fab{width:68px;height:68px;border-radius:9999px;display:flex;align-items:center;justify-content:center}
-    .verifying{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:80;color:var(--green-verify);flex-direction:column;gap:12px;font-weight:800}
-    canvas.game-canvas{width:100%;height:360px;border-radius:10px;display:block}
-    a{color:var(--accent)}
-    .muted{color:var(--muted)}
-    .small{font-size:13px;color:var(--muted)}
+    :root{ --green:#7CFC00; --bg:#ffffff; --text:#111 }
+    body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--text); min-height:100vh; }
+    main{ padding:32px; max-width:900px; margin:0 auto; }
+
+    .gate { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); z-index:9999; }
+    .gate-card { width:min(720px,92%); background:#fff; border-radius:12px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+    .gate-header { display:flex; gap:12px; align-items:flex-start; }
+    .gate-title { font-weight:800; font-size:20px; margin:0; }
+    .gate-body { margin-top:10px; color:#444; }
+    .btn { display:inline-block; padding:10px 14px; border-radius:8px; cursor:pointer; border:0; font-weight:700; }
+    .btn-primary { background:#ff4d4f; color:#fff; }
+    .btn-outline { background:transparent; border:1px solid rgba(0,0,0,0.08); color:#111; }
+    .gate-actions { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }
+
+    .verifying { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000; color:var(--green); z-index:10000; flex-direction:column; gap:12px; font-weight:800; font-size:20px; }
+    .spinner { width:48px; height:48px; border-radius:50%; border:4px solid rgba(124,252,0,0.12); border-top-color:var(--green); animation:spin 1s linear infinite; box-shadow:0 10px 40px rgba(0,0,0,0.6); }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    .hint { margin-top:12px; font-size:13px; color:#666; }
   </style>
 </head>
 <body>
-<div id="app" class="min-h-screen flex flex-col">
-
-  <!-- Header -->
-  <header class="sticky top-0 z-40" style="backdrop-filter: blur(6px); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-bottom:1px solid rgba(255,255,255,0.02)">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-      <button id="menu-btn" class="p-2 rounded hover:bg-white/3">
-        <svg class="w-6 h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-      </button>
-
-      <!-- Logo -->
-      <div id="logo" class="flex items-center gap-3 cursor-pointer select-none">
-        <div class="text-2xl">🕊️📜<span class="inline-block ml-[-6px]">🔴</span></div>
-        <div class="font-extrabold tracking-wide">PIGEON</div>
-      </div>
-
-      <div class="flex-1 max-w-xl">
-        <input id="search" type="search" placeholder="Search posts, users or media..." class="w-full px-3 py-2 rounded-lg border border-white/6 bg-white/2" />
-      </div>
-
-      <div id="user-area" class="flex items-center gap-3">
-        <div id="signed-out" class="flex items-center gap-2">
-          <button id="signin-btn" class="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Sign in</button>
-        </div>
-        <div id="signed-in" class="hidden items-center gap-3">
-          <img id="user-photo" class="w-8 h-8 rounded-full" src="" alt="avatar"/>
-          <div class="text-sm" id="user-name"></div>
-          <button id="signout-btn" class="px-3 py-1 border rounded text-sm">Sign out</button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main -->
-  <div class="flex-1 max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <main id="feed" class="lg:col-span-2 space-y-4">
-      <div class="card p-4">
-        <div class="flex items-start gap-3">
-          <img id="compose-avatar" class="w-10 h-10 rounded-full" src="" alt="you"/>
-          <form id="compose-form" class="flex-1 space-y-3">
-            <div class="flex gap-2">
-              <input id="compose-title" placeholder="Title (required)" class="flex-1 px-3 py-2 rounded border border-white/6 bg-transparent" required />
-              <select id="compose-type" class="px-3 py-2 rounded border border-white/6 bg-transparent">
-                <option value="text">Text</option>
-                <option value="link">Link</option>
-                <option value="poll">Poll</option>
-                <option value="image">Image</option>
-                <option value="video">Video</option>
-                <option value="voice">Voice</option>
-              </select>
-            </div>
-
-            <textarea id="compose-text" rows="3" placeholder="Write something..." class="w-full px-3 py-2 rounded border border-white/6 bg-transparent"></textarea>
-
-            <!-- Media area -->
-            <div id="compose-media-area" class="hidden space-y-2">
-              <div class="dash-box p-3 flex items-center gap-3">
-                <i class="fa-solid fa-plus text-slate-400"></i>
-                <input id="compose-media-url" placeholder="Media URL (image/video/audio) or embed link" class="flex-1 bg-transparent outline-none" />
-              </div>
-            </div>
-
-            <!-- Poll options area -->
-            <div id="compose-poll-area" class="hidden space-y-2">
-              <div class="flex gap-2">
-                <input class="poll-opt px-3 py-2 rounded border border-white/6 bg-transparent" placeholder="Option 1" />
-                <input class="poll-opt px-3 py-2 rounded border border-white/6 bg-transparent" placeholder="Option 2" />
-              </div>
-              <div class="flex gap-2">
-                <button id="add-poll-opt" type="button" class="px-3 py-1 rounded bg-white/5">Add option</button>
-                <div class="small muted">Min 2, max 5</div>
-              </div>
-            </div>
-
-            <div class="flex justify-between items-center">
-              <div class="text-sm muted" id="compose-hint">Posts save to Firestore (requires your project).</div>
-              <div class="flex gap-2">
-                <button id="compose-reset" type="button" class="px-3 py-1 rounded border border-white/6">Reset</button>
-                <button id="compose-submit" type="button" class="px-4 py-2 rounded bg-red-600 text-white">Publish</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- posts list -->
-      <div id="posts-list" class="space-y-4"></div>
-    </main>
-
-    <aside class="space-y-4">
-      <div id="friends-card" class="card p-4">
-        <div class="flex items-center justify-between">
-          <div class="font-semibold">Friends</div>
-          <div class="text-sm muted">online</div>
-        </div>
-        <div class="mt-3">
-          <input id="friends-search" placeholder="Search friends..." class="w-full px-3 py-2 rounded border border-white/6 bg-transparent"/>
-        </div>
-        <ul id="friends-list" class="mt-3 space-y-2 max-h-64 overflow-auto"></ul>
-      </div>
-
-      <div class="card p-4">
-        <div class="font-semibold mb-2">Trending</div>
-        <ol id="trending" class="list-decimal list-inside small"></ol>
-      </div>
-    </aside>
-  </div>
-
-  <!-- Bottom bar with + menu -->
-  <div class="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40">
-    <div class="pointer-events-auto flex items-center gap-4">
-      <div id="plus-menu" class="flex items-center gap-2 card p-2 rounded-full">
-        <button data-action="image" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-image text-red-400"></i></button>
-        <button data-action="video" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-film text-red-400"></i></button>
-        <button data-action="poll" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-poll text-red-400"></i></button>
-        <button data-action="voice" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-microphone text-red-400"></i></button>
-        <button data-action="text" class="p-2 rounded hover:bg-white/3"><i class="fa-solid fa-font text-red-400"></i></button>
-      </div>
-
-      <button id="fab" class="fab card">
-        <i class="fa-solid fa-plus text-red-400 text-2xl"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- DM modal -->
-  <div id="dm-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center">
-    <div class="w-full max-w-md card p-4">
-      <div class="flex items-center justify-between">
-        <div class="font-semibold" id="dm-with">Chat</div>
-        <button id="dm-close" class="text-slate-300"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="dm-thread" class="mt-3 max-h-56 overflow-auto space-y-2 small muted"></div>
-      <div class="mt-3 flex gap-2">
-        <input id="dm-input" class="flex-1 px-3 py-2 rounded border border-white/6 bg-transparent" placeholder="Message..." />
-        <button id="dm-send" class="px-3 py-2 bg-red-600 text-white rounded">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Games modal (Flappy + Catch) -->
-  <div id="game-modal" class="fixed inset-0 bg-black/70 z-60 hidden items-center justify-center">
-    <div class="w-[780px] max-w-[95%] card p-4">
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <div class="font-bold">Pigeon Games</div>
-          <div class="small muted">Flappy Pigeon & Catch-the-Pigeon</div>
-        </div>
-        <div class="flex gap-2">
-          <button id="game-type-flappy" class="px-3 py-1 border rounded small">Flappy</button>
-          <button id="game-type-catch" class="px-3 py-1 border rounded small">Catch</button>
-          <button id="game-close" class="text-slate-300"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-      </div>
-      <canvas id="game-canvas" class="game-canvas"></canvas>
-      <div class="mt-3 text-sm text-slate-400">Score: <span id="game-score">0</span></div>
-    </div>
-  </div>
-
-  <!-- Subscription Gate -->
-  <div id="gate" class="fixed inset-0 bg-black/80 z-70 flex items-center justify-center">
-    <div class="w-[720px] max-w-[94%] card p-6">
-      <div class="flex items-start gap-4">
-        <div class="text-4xl">🕊️📜<span class="ml-[-8px]">🔴</span></div>
-        <div>
-          <h2 class="text-2xl font-extrabold">Subscribe to continue</h2>
-          <p class="muted mt-2">Please subscribe to the channel, then unlock and sign in with Google to view the feed.</p>
-          <div class="mt-4 flex gap-3">
-            <button id="open-channel-btn" class="px-4 py-2 rounded bg-red-600 text-white">Open Channel</button>
-            <button id="unlock-btn" class="px-4 py-2 rounded border">Unlock (Sign-in)</button>
+  <div id="gate" class="gate" aria-hidden="true" style="display:none;">
+    <div class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div class="gate-header">
+        <div style="font-size:28px">🕊️📜<span style="margin-left:-10px">🔴</span></div>
+        <div style="flex:1">
+          <h1 id="gate-title" class="gate-title">Please subscribe to continue</h1>
+          <div class="gate-body">
+            Click "Open Channel" to open the YouTube channel (app or web). After subscribing on YouTube, return and click "I subscribed — Verify".
+            <div class="hint">This demo uses manual confirmation. Automatic verification requires server-side Google OAuth + YouTube API.</div>
           </div>
-          <p class="text-xs muted mt-3">We attempt a deep link to YouTube app; fallback to web. This demo uses Firebase Auth and Firestore.</p>
+
+          <div class="gate-actions">
+            <button id="open-channel" class="btn btn-outline">Open Channel</button>
+            <button id="verify-btn" class="btn btn-primary">I subscribed — Verify</button>
+            <button id="skip-btn" class="btn btn-outline" title="For testing only">Skip (test)</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Verifying overlay (black + green) -->
-  <div id="verifying" class="verifying hidden">
-    <div style="width:56px;height:56px;border-radius:9999px;border:4px solid rgba(124,252,0,0.12);border-top-color:var(--green-verify); animation:spin 1s linear infinite;"></div>
+  <div id="verifying" class="verifying" aria-hidden="true" style="display:none;">
+    <div class="spinner" aria-hidden="true"></div>
     <div id="verifying-text">Verifying subscription...</div>
   </div>
 
-</div>
+  <main id="content" style="display:none;">
+    <h1>Welcome to my site!</h1>
+    <p>This is my main page.</p>
+    <p style="font-size:13px;color:#666;">To reset the gate for testing: open the console and run:
+      <code>localStorage.removeItem('subscribed_v1'); localStorage.removeItem('sub_clicked_v1'); location.reload();</code>
+    </p>
+  </main>
 
-<!-- Firebase libs (compat for quick prototyping) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script>
+    // Replaced with your channel URL
+    const CHANNEL_URL = 'https://www.youtube.com/@Ultra-wk8ed';
 
-<script>
-/* ====== CONFIG: replace with your Firebase project config ======
-  1) Replace FIREBASE_CONFIG fields below.
-  2) In Firebase console enable Authentication -> Google and Firestore.
-  3) Use Firestore security rules that require auth for writes.
-*/
-const FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  // ...other fields
-};
-const CHANNEL_ID_OR_USER = "Ultra-wk8ed";
+    const GATE_KEY = 'subscribed_v1';
+    const CLICKED_KEY = 'sub_clicked_v1';
 
-firebase.initializeApp(FIREBASE_CONFIG);
-const auth = firebase.auth();
-const db = firebase.firestore();
+    const gate = document.getElementById('gate');
+    const verifying = document.getElementById('verifying');
+    const verifyingText = document.getElementById('verifying-text');
+    const content = document.getElementById('content');
+    const openBtn = document.getElementById('open-channel');
+    const verifyBtn = document.getElementById('verify-btn');
+    const skipBtn = document.getElementById('skip-btn');
 
-const SUB_CLICKED_KEY = 'pigeon_sub_clicked_v1';
-const VERIFIED_KEY = 'pigeon_verified_v1';
-
-const gate = document.getElementById('gate');
-const openChannelBtn = document.getElementById('open-channel-btn');
-const unlockBtn = document.getElementById('unlock-btn');
-const verifying = document.getElementById('verifying');
-const verifyingText = document.getElementById('verifying-text');
-
-const signinBtn = document.getElementById('signin-btn');
-const signoutBtn = document.getElementById('signout-btn');
-const signedInArea = document.getElementById('signed-in');
-const signedOutArea = document.getElementById('signed-out');
-const userNameEl = document.getElementById('user-name');
-const userPhotoEl = document.getElementById('user-photo');
-
-const postsList = document.getElementById('posts-list');
-const composeAvatar = document.getElementById('compose-avatar');
-const composeSubmit = document.getElementById('compose-submit');
-const composeReset = document.getElementById('compose-reset');
-const composeTitle = document.getElementById('compose-title');
-const composeText = document.getElementById('compose-text');
-const composeType = document.getElementById('compose-type');
-const composeMediaArea = document.getElementById('compose-media-area');
-const composeMediaUrl = document.getElementById('compose-media-url');
-const composePollArea = document.getElementById('compose-poll-area');
-const addPollOptBtn = document.getElementById('add-poll-opt');
-
-const friendsList = document.getElementById('friends-list');
-const dmModal = document.getElementById('dm-modal');
-const dmWith = document.getElementById('dm-with');
-const dmThread = document.getElementById('dm-thread');
-const dmInput = document.getElementById('dm-input');
-const dmSend = document.getElementById('dm-send');
-const dmClose = document.getElementById('dm-close');
-
-const menuBtn = document.getElementById('menu-btn');
-const friendsCard = document.getElementById('friends-card');
-const trendingEl = document.getElementById('trending');
-
-const fab = document.getElementById('fab');
-const plusMenu = document.getElementById('plus-menu');
-
-const logo = document.getElementById('logo');
-const gameModal = document.getElementById('game-modal');
-const gameCanvas = document.getElementById('game-canvas');
-const gameClose = document.getElementById('game-close');
-const gameScoreEl = document.getElementById('game-score');
-const gameTypeFlappy = document.getElementById('game-type-flappy');
-const gameTypeCatch = document.getElementById('game-type-catch');
-
-let currentUser = null;
-let postsUnsub = null;
-
-/* Utility: open YouTube deep link then fallback to web */
-function openYouTubeChannel(channel) {
-  const webFallback = `https://www.youtube.com/${channel.startsWith('@') ? channel : 'c/' + channel}`;
-  try {
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = `vnd.youtube://channel/${channel}`;
-    document.body.appendChild(iframe);
-    setTimeout(()=>document.body.removeChild(iframe), 500);
-  } catch {}
-  window.open(webFallback, '_blank', 'noopener');
-  localStorage.setItem(SUB_CLICKED_KEY, JSON.stringify({ clickedAt: Date.now(), channel }));
-}
-
-/* Verifying overlay helpers */
-function showVerifying(msg = 'Verifying subscription...') {
-  verifyingText.textContent = msg;
-  verifying.classList.remove('hidden');
-}
-function hideVerifying() { verifying.classList.add('hidden'); }
-
-/* Gate logic */
-openChannelBtn.addEventListener('click', () => {
-  openYouTubeChannel(CHANNEL_ID_OR_USER);
-  alert('Channel opened. Subscribe in YouTube, then click Unlock and sign in.');
-});
-
-unlockBtn.addEventListener('click', () => {
-  const clicked = JSON.parse(localStorage.getItem(SUB_CLICKED_KEY) || 'null');
-  if (!clicked) { alert('Click "Open Channel" first.'); return; }
-  showVerifying('Opening Google Sign-In...');
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).then(result => {
-    currentUser = result.user;
-    const verified = { uid: currentUser.uid, email: currentUser.email, channel: CHANNEL_ID_OR_USER, at: Date.now() };
-    localStorage.setItem(VERIFIED_KEY, JSON.stringify(verified));
-    hideVerifying();
-    gate.classList.add('hidden');
-    enterApp();
-  }).catch(err => {
-    hideVerifying();
-    alert('Sign-in cancelled or failed: ' + (err.message || err));
-  });
-});
-
-/* Header sign-in/out */
-signinBtn.addEventListener('click', () => {
-  showVerifying('Signing in...');
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).then(res => {
-    currentUser = res.user;
-    localStorage.setItem(VERIFIED_KEY, JSON.stringify({ uid: currentUser.uid, email: currentUser.email, at: Date.now() }));
-    hideVerifying();
-    gate.classList.add('hidden');
-    enterApp();
-  }).catch(err => { hideVerifying(); alert('Sign-in failed: ' + err.message); });
-});
-signoutBtn.addEventListener('click', async () => {
-  if (!confirm('Sign out?')) return;
-  await auth.signOut();
-  currentUser = null;
-  signedInArea.classList.add('hidden');
-  signedOutArea.classList.remove('hidden');
-  location.reload();
-});
-
-/* Auth state listener */
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-    signedOutArea.classList.add('hidden');
-    signedInArea.classList.remove('hidden');
-    userNameEl.textContent = user.displayName || user.email;
-    userPhotoEl.src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
-    composeAvatar.src = user.photoURL || 'https://www.gravatar.com/avatar/?d=mp';
-  } else {
-    currentUser = null;
-    signedInArea.classList.add('hidden');
-    signedOutArea.classList.remove('hidden');
-    composeAvatar.src = 'https://www.gravatar.com/avatar/?d=mp';
-  }
-});
-
-/* on load: gate or app */
-window.addEventListener('load', () => {
-  const verified = JSON.parse(localStorage.getItem(VERIFIED_KEY) || 'null');
-  if (!verified) {
-    gate.classList.remove('hidden');
-  } else {
-    gate.classList.add('hidden');
-    enterApp();
-  }
-});
-
-/* Enter application: wire compose, feed, friends, UI */
-function enterApp() {
-  bindCompose();
-  bindFeedRealtime();
-  populateFriends();
-  bindUIHelpers();
-}
-
-/* Compose bindings (supports poll creation) */
-function bindCompose() {
-  composeType.addEventListener('change', () => {
-    const t = composeType.value;
-    composeMediaArea.classList.toggle('hidden', !(t === 'image' || t === 'video' || t === 'voice' || t === 'link'));
-    composePollArea.classList.toggle('hidden', t !== 'poll');
-  });
-
-  addPollOptBtn.addEventListener('click', () => {
-    const opts = composePollArea.querySelectorAll('.poll-opt');
-    if (opts.length >= 5) return alert('Max 5 options');
-    const input = document.createElement('input');
-    input.className = 'poll-opt px-3 py-2 rounded border border-white/6 bg-transparent';
-    input.placeholder = 'Option ' + (opts.length + 1);
-    composePollArea.querySelector('.flex').appendChild(input);
-  });
-
-  composeReset.addEventListener('click', () => {
-    composeTitle.value = '';
-    composeText.value = '';
-    composeMediaUrl.value = '';
-    composeType.value = 'text';
-    composeMediaArea.classList.add('hidden');
-    composePollArea.classList.add('hidden');
-    // reset poll options to 2
-    const pollFlex = composePollArea.querySelector('.flex');
-    if (pollFlex) {
-      pollFlex.innerHTML = '';
-      const i1 = document.createElement('input'); i1.className='poll-opt px-3 py-2 rounded border border-white/6 bg-transparent'; i1.placeholder='Option 1';
-      const i2 = document.createElement('input'); i2.className='poll-opt px-3 py-2 rounded border border-white/6 bg-transparent'; i2.placeholder='Option 2';
-      pollFlex.appendChild(i1); pollFlex.appendChild(i2);
-    }
-  });
-
-  composeSubmit.addEventListener('click', async () => {
-    if (!auth.currentUser) { alert('Sign in to post'); return; }
-    const title = composeTitle.value.trim();
-    if (!title) { alert('Title required'); composeTitle.focus(); return; }
-    const type = composeType.value;
-    const text = composeText.value.trim();
-    const mediaURL = (composeMediaUrl.value || '').trim() || null;
-    const post = {
-      uid: auth.currentUser.uid,
-      displayName: auth.currentUser.displayName || auth.currentUser.email,
-      title, text,
-      type,
-      mediaURL: mediaURL || null,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      likes: 0
-    };
-
-    if (type === 'poll') {
-      const opts = Array.from(composePollArea.querySelectorAll('.poll-opt')).map(n => n.value.trim()).filter(Boolean);
-      if (opts.length < 2) return alert('Add at least 2 poll options');
-      if (opts.length > 5) return alert('Max 5 options');
-      post.options = opts.map(o => ({ label: o, count: 0 }));
+    function openYouTube(channelUrl) {
+      const web = channelUrl;
+      const channelIdMatch = channelUrl.match(/\/channel\/([^\/\?]+)/);
+      const userMatch = channelUrl.match(/\/@?([^\/\?]+)/);
+      const attempts = [];
+      if (channelIdMatch) attempts.push(`vnd.youtube://channel/${channelIdMatch[1]}`);
+      if (userMatch) attempts.push(`vnd.youtube://user/${userMatch[1]}`);
+      attempts.push(`vnd.youtube://`);
+      attempts.push(web);
+      try {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = attempts[0];
+        document.body.appendChild(iframe);
+        setTimeout(() => document.body.removeChild(iframe), 500);
+      } catch (e) {}
+      window.open(web, '_blank', 'noopener');
+      localStorage.setItem(CLICKED_KEY, JSON.stringify({ at: Date.now(), url: channelUrl }));
     }
 
-    try {
-      await db.collection('posts').add(post);
-      composeTitle.value = '';
-      composeText.value = '';
-      composeMediaUrl.value = '';
-      composeMediaArea.classList.add('hidden');
-      composePollArea.classList.add('hidden');
-    } catch (err) {
-      console.error('Failed to publish', err);
-      alert('Failed to publish: ' + err.message);
-    }
-  });
-}
-
-/* Live feed: onSnapshot updates */
-function bindFeedRealtime() {
-  if (postsUnsub) postsUnsub();
-  postsUnsub = db.collection('posts').orderBy('timestamp', 'desc')
-    .onSnapshot(snapshot => {
-      postsList.innerHTML = '';
-      const trendingMap = new Map();
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const id = doc.id;
-        const node = renderPost(id, data);
-        postsList.appendChild(node);
-        trendingMap.set((data.title||'').slice(0,40), (trendingMap.get((data.title||'').slice(0,40))||0)+1);
-      });
-      trendingEl.innerHTML = '';
-      Array.from(trendingMap.keys()).slice(0,5).forEach(t => {
-        const li = document.createElement('li'); li.textContent = t; trendingEl.appendChild(li);
-      });
-    }, err => console.error('feed error', err));
-}
-
-/* Render a post and attach event listeners. Poll posts get special UI and vote handler */
-function renderPost(id, p) {
-  const wrapper = document.createElement('article');
-  wrapper.className = 'card p-4 shadow-soft';
-  const time = p.timestamp && p.timestamp.toDate ? timeAgo(p.timestamp.toDate()) : 'now';
-  wrapper.innerHTML = `
-    <div class="flex items-start gap-3">
-      <img class="w-11 h-11 rounded-full" src="${escapeHtml(p.photoURL||'https://www.gravatar.com/avatar/?d=mp')}" />
-      <div class="flex-1">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="font-semibold">${escapeHtml(p.displayName||'Anonymous')}</div>
-            <div class="text-xs muted">${escapeHtml(p.title||'')}</div>
-          </div>
-          <div class="text-xs muted">${time}</div>
-        </div>
-
-        <div class="mt-3 text-slate-200">${escapeHtml(p.text||'')}</div>
-
-        <div class="mt-3" id="media-${id}">
-          ${p.mediaURL ? renderMedia(p.mediaURL) : ''}
-        </div>
-
-        <div class="mt-3 flex items-center gap-3 text-sm">
-          <button data-id="${id}" class="like-btn text-muted hover:text-red-400"><i class="fa-regular fa-heart"></i> <span class="likes-count">${p.likes||0}</span></button>
-          <button data-id="${id}" class="comment-btn text-muted hover:text-slate-200"><i class="fa-regular fa-comment"></i> Comment</button>
-          <button data-id="${id}" class="share-btn text-muted hover:text-slate-200"><i class="fa-solid fa-share"></i> Share</button>
-        </div>
-
-        <div class="mt-3" id="poll-area-${id}"></div>
-      </div>
-    </div>
-  `;
-
-  const likeBtn = wrapper.querySelector('.like-btn');
-  const likesCountEl = wrapper.querySelector('.likes-count');
-  likeBtn.addEventListener('click', async () => {
-    if (!auth.currentUser) { alert('Sign in to like'); return; }
-    const ref = db.collection('posts').doc(id);
-    try {
-      await ref.update({ likes: firebase.firestore.FieldValue.increment(1) });
-    } catch (e) {
-      await ref.set({ likes: 1 }, { merge: true });
-    }
-  });
-
-  const commentBtn = wrapper.querySelector('.comment-btn');
-  commentBtn.addEventListener('click', async () => {
-    const text = prompt('Enter comment (demo)');
-    if (!text) return;
-    try {
-      await db.collection('posts').doc(id).collection('comments').add({
-        uid: auth.currentUser ? auth.currentUser.uid : null,
-        displayName: auth.currentUser ? (auth.currentUser.displayName||auth.currentUser.email) : 'anon',
-        text,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      alert('Comment saved (demo).');
-    } catch (e) { alert('Failed to save comment: ' + e.message); }
-  });
-
-  // If this is a poll post, render poll UI and set up live updates via post snapshot
-  if (p.type === 'poll') {
-    const pollArea = wrapper.querySelector('#poll-area-' + id);
-    // subscribe to this post's snapshot to get live option counts
-    db.collection('posts').doc(id).onSnapshot(doc => {
-      const data = doc.data();
-      renderPollUI(id, data, pollArea);
-    }, err => console.error('poll snapshot error', err));
-  }
-
-  return wrapper;
-}
-
-/* Render media helper */
-function renderMedia(url) {
-  const u = String(url).trim();
-  if (/youtube\.com|youtu\.be/i.test(u)) {
-    const vid = extractYoutubeId(u);
-    if (vid) return `<div class="mt-2 rounded overflow-hidden"><iframe class="w-full h-56" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe></div>`;
-  }
-  if (/\.(png|jpg|jpeg|webp|gif)$/i.test(u)) return `<img src="${escapeHtml(u)}" class="w-full rounded" />`;
-  if (/\.mp4/i.test(u)) return `<video controls class="w-full rounded"><source src="${escapeHtml(u)}"></video>`;
-  if (/\.mp3|\.wav|\.ogg/i.test(u)) return `<audio controls class="w-full"><source src="${escapeHtml(u)}" /></audio>`;
-  return `<a href="${escapeHtml(u)}" target="_blank" class="text-red-400 underline">${escapeHtml(u)}</a>`;
-}
-
-/* Poll UI render + vote handler */
-async function renderPollUI(postId, postData, container) {
-  container.innerHTML = '';
-  if (!postData || !postData.options) { container.innerHTML = '<div class="small muted">Poll data missing</div>'; return; }
-  const uid = auth.currentUser ? auth.currentUser.uid : null;
-  // show options with counts
-  const total = (postData.options || []).reduce((s,o) => s + (o.count||0), 0) || 0;
-  postData.options.forEach((opt, idx) => {
-    const percent = total ? Math.round(((opt.count||0) / total) * 100) : 0;
-    const optWrap = document.createElement('div');
-    optWrap.className = 'mb-2';
-    optWrap.innerHTML = `
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex-1 text-slate-200">${escapeHtml(opt.label)}</div>
-        <div class="text-sm muted">${opt.count || 0} · ${percent}%</div>
-      </div>
-      <div class="w-full bg-white/4 h-2 rounded mt-1 overflow-hidden"><div style="width:${percent}%" class="bg-red-500 h-2"></div></div>
-    `;
-    // vote button
-    const voteBtn = document.createElement('button');
-    voteBtn.className = 'mt-2 px-3 py-1 rounded border border-white/6 text-sm';
-    voteBtn.textContent = 'Vote';
-    voteBtn.addEventListener('click', async () => {
-      if (!auth.currentUser) { alert('Sign in to vote'); return; }
-      await castPollVote(postId, idx);
-    });
-    optWrap.appendChild(voteBtn);
-    container.appendChild(optWrap);
-  });
-
-  // Check if current user already voted: query pollVotes subcollection for doc id = uid
-  if (uid) {
-    try {
-      const voteDoc = await db.collection('posts').doc(postId).collection('pollVotes').doc(uid).get();
-      if (voteDoc.exists) {
-        const vote = voteDoc.data();
-        const info = document.createElement('div');
-        info.className = 'small muted mt-2';
-        info.textContent = `You voted for option ${vote.option + 1}`;
-        container.appendChild(info);
+    async function verifyAndEnter() {
+      const clicked = localStorage.getItem(CLICKED_KEY);
+      if (!clicked) {
+        alert('Please click "Open Channel" first and subscribe on YouTube, then return and click Verify.');
+        return;
       }
-    } catch (e) { console.error('poll vote check', e); }
-  } else {
-    const info = document.createElement('div'); info.className='small muted mt-2'; info.textContent='Sign in to vote.'; container.appendChild(info);
-  }
-}
 
-/* Cast poll vote with transaction to prevent double votes */
-async function castPollVote(postId, optionIndex) {
-  if (!auth.currentUser) { alert('Sign in to vote'); return; }
-  const uid = auth.currentUser.uid;
-  const postRef = db.collection('posts').doc(postId);
-  const voteRef = postRef.collection('pollVotes').doc(uid);
-  try {
-    await db.runTransaction(async tx => {
-      const voteDoc = await tx.get(voteRef);
-      if (voteDoc.exists) throw new Error('You already voted');
-      const postDoc = await tx.get(postRef);
-      if (!postDoc.exists) throw new Error('Post not found');
-      const data = postDoc.data();
-      const options = (data.options || []).slice();
-      if (optionIndex < 0 || optionIndex >= options.length) throw new Error('Invalid option');
-      options[optionIndex].count = (options[optionIndex].count || 0) + 1;
-      tx.update(postRef, { options });
-      tx.set(voteRef, { uid, option: optionIndex, at: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-    // success; UI will update by onSnapshot listener on post
-  } catch (err) {
-    if (err && err.message === 'You already voted') alert('You already voted in this poll');
-    else alert('Voting failed: ' + (err.message || err));
-  }
-}
+      verifyingText.textContent = 'Verifying subscription...';
+      verifying.style.display = 'flex';
 
-/* Helpers */
-function extractYoutubeId(url){
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
-    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
-  } catch (e) {}
-  return null;
-}
-function timeAgo(d) {
-  const s = Math.floor((Date.now() - d.getTime())/1000);
-  if (s < 60) return s + 's';
-  if (s < 3600) return Math.floor(s/60) + 'm';
-  if (s < 86400) return Math.floor(s/3600) + 'h';
-  return Math.floor(s/86400) + 'd';
-}
-function escapeHtml(s){ return String(s||'').replace(/[&<>"'\/]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[c]); }
+      await new Promise(r => setTimeout(r, 1400));
 
-/* Friends list & DM mock */
-function populateFriends() {
-  const friends = [
-    { id: 'alice', name: 'alice', online: true },
-    { id: 'bob', name: 'bob', online: false },
-    { id: 'chris', name: 'chris', online: true },
-    { id: 'dina', name: 'dina', online: true },
-  ];
-  friendsList.innerHTML = '';
-  friends.forEach(f => {
-    const li = document.createElement('li');
-    li.className = 'flex items-center justify-between p-2 rounded hover:bg-white/3 cursor-pointer';
-    li.innerHTML = `<div class="flex items-center gap-3"><img class="w-8 h-8 rounded-full" src="https://www.gravatar.com/avatar/${f.id}?d=identicon" /><div><div class="font-medium">${f.name}</div><div class="small muted">${f.online ? 'online' : 'offline'}</div></div></div><button class="p-2 text-slate-300 dm-open"><i class="fa-solid fa-comment"></i></button>`;
-    li.querySelector('.dm-open').addEventListener('click', () => openDM(f));
-    friendsList.appendChild(li);
-  });
-}
-function openDM(friend){
-  dmModal.classList.remove('hidden'); dmModal.classList.add('flex');
-  dmWith.textContent = 'Chat with '+friend.name;
-  dmThread.innerHTML = `<div class="small muted">Demo DM. Click send to append messages.</div>`;
-  dmSend.onclick = () => {
-    const txt = dmInput.value.trim(); if (!txt) return;
-    const m = document.createElement('div'); m.className='text-sm bg-white/4 p-2 rounded'; m.textContent = 'You: '+txt;
-    dmThread.appendChild(m); dmInput.value='';
-    dmThread.scrollTop = dmThread.scrollHeight;
-  };
-}
-dmClose.addEventListener('click', () => { dmModal.classList.add('hidden'); dmModal.classList.remove('flex'); });
+      localStorage.setItem(GATE_KEY, JSON.stringify({ at: Date.now(), channel: CHANNEL_URL }));
 
-/* Bottom menu interactions */
-plusMenu.addEventListener('click', (e) => {
-  const action = e.target.closest('button')?.dataset?.action;
-  if (!action) return;
-  composeType.value = action === 'text' ? 'text' : action;
-  composeType.dispatchEvent(new Event('change'));
-  if (action === 'poll') {
-    composeTitle.focus();
-  } else if (action === 'image' || action==='video' || action==='voice' || action==='link') {
-    composeMediaArea.classList.remove('hidden');
-    composeMediaUrl.focus();
-  } else {
-    composeText.focus();
-  }
-});
-fab.addEventListener('click', ()=>composeTitle.focus());
+      verifyingText.textContent = 'Subscription verified — welcome!';
+      await new Promise(r => setTimeout(r, 700));
 
-/* Logo -> Games modal & game type switching */
-logo.addEventListener('click', () => { gameModal.classList.remove('hidden'); gameModal.classList.add('flex'); startGame('flappy'); });
-gameClose.addEventListener('click', () => { stopGame(); gameModal.classList.add('hidden'); gameModal.classList.remove('flex'); });
-gameTypeFlappy.addEventListener('click', ()=>startGame('flappy'));
-gameTypeCatch.addEventListener('click', ()=>startGame('catch'));
-
-/* Games implementation: flappy + catch */
-let gRunning=false, gCtx=null, gW=0, gH=0, gBird=null, gPipes=null, gTick=0, gScore=0, gGameType='flappy';
-
-function startGame(type='flappy'){
-  stopGame();
-  gGameType = type;
-  const cvs = gameCanvas;
-  gCtx = cvs.getContext('2d');
-  cvs.width = Math.min(760, window.innerWidth - 60);
-  cvs.height = 360;
-  gW = cvs.width; gH = cvs.height;
-  gScore = 0; gameScoreEl.textContent = '0';
-  if (type==='flappy') startFlappy(cvs);
-  else startCatch(cvs);
-}
-
-/* Flappy */
-function startFlappy(cvs){
-  gBird = { x:80, y:180, vy:0, r:14 };
-  gPipes = []; gTick = 0; gRunning = true;
-  const gravity = 0.5; const gap = 120;
-  function spawnPipe(){ const h = 60 + Math.random() * (gH - 200); gPipes.push({ x: gW + 20, topH: h, passed: false }); }
-  function flap(){ gBird.vy = -8; }
-  function loop(){
-    gCtx.clearRect(0,0,gW,gH);
-    gCtx.fillStyle = '#011627'; gCtx.fillRect(0,0,gW,gH);
-    gBird.vy += gravity; gBird.y += gBird.vy;
-    if (gBird.y > gH - gBird.r){ endGame(); return; }
-    if (gBird.y < gBird.r){ gBird.y = gBird.r; gBird.vy = 0; }
-    gTick++;
-    if (gTick % 90 === 0) spawnPipe();
-    for (let i=gPipes.length-1;i>=0;i--){
-      gPipes[i].x -= 2.8;
-      gCtx.fillStyle = '#2a7b2a';
-      gCtx.fillRect(gPipes[i].x, 0, 52, gPipes[i].topH);
-      gCtx.fillRect(gPipes[i].x, gPipes[i].topH + gap, 52, gH);
-      if (!gPipes[i].passed && gPipes[i].x + 52 < gBird.x){ gPipes[i].passed = true; gScore++; gameScoreEl.textContent = ''+gScore; }
-      if (gBird.x + gBird.r > gPipes[i].x && gBird.x - gBird.r < gPipes[i].x + 52) {
-        if (gBird.y - gBird.r < gPipes[i].topH || gBird.y + gBird.r > gPipes[i].topH + gap) { endGame(); return; }
-      }
-      if (gPipes[i].x < -60) gPipes.splice(i,1);
+      verifying.style.display = 'none';
+      showContent();
     }
-    // draw bird
-    gCtx.fillStyle = '#fff'; gCtx.beginPath(); gCtx.arc(gBird.x, gBird.y, gBird.r, 0, Math.PI*2); gCtx.fill();
-    gCtx.fillStyle = '#f59e0b'; gCtx.fillRect(gBird.x-8, gBird.y-6, 16, 8);
-    if (gRunning) requestAnimationFrame(loop);
-  }
-  function keyHandler(e){ if (e.code === 'Space'){ flap(); e.preventDefault(); } }
-  cvs.addEventListener('click', flap); document.addEventListener('keydown', keyHandler);
-  gBird._cleanup = ()=>{ cvs.removeEventListener('click', flap); document.removeEventListener('keydown', keyHandler); };
-  requestAnimationFrame(loop);
-}
 
-/* Catch the pigeon: moving target user must click */
-function startCatch(cvs){
-  let target = { x: 60, y: 80, vx: 3.5, vy: 2.1, r: 22 };
-  gRunning = true; gScore = 0; gameScoreEl.textContent='0';
-  function loop(){
-    gCtx.clearRect(0,0,gW,gH);
-    gCtx.fillStyle = '#011627'; gCtx.fillRect(0,0,gW,gH);
-    target.x += target.vx; target.y += target.vy;
-    if (target.x < target.r || target.x > gW - target.r) target.vx *= -1;
-    if (target.y < target.r || target.y > gH - target.r) target.vy *= -1;
-    // bird graphic
-    gCtx.fillStyle = '#fff'; gCtx.beginPath(); gCtx.arc(target.x, target.y, target.r, 0, Math.PI*2); gCtx.fill();
-    gCtx.fillStyle = '#f59e0b'; gCtx.fillRect(target.x-10, target.y-6, 20, 8);
-    if (gRunning) requestAnimationFrame(loop);
-  }
-  function clickHandler(e){
-    const rect = cvs.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const dx = mx - target.x, dy = my - target.y;
-    if (dx*dx + dy*dy <= target.r*target.r) { gScore++; gameScoreEl.textContent = ''+gScore; }
-  }
-  cvs.addEventListener('click', clickHandler);
-  gCtx = cvs.getContext('2d');
-  requestAnimationFrame(loop);
-  gCtx._cleanup = ()=>{ cvs.removeEventListener('click', clickHandler); };
-}
+    function showContent() {
+      gate.style.display = 'none';
+      content.style.display = 'block';
+    }
 
-/* Stop current game */
-function stopGame(){
-  gRunning = false;
-  if (gBird && gBird._cleanup) gBird._cleanup();
-  if (gCtx && gCtx._cleanup) gCtx._cleanup();
-}
+    function hideGateShowContentIfVerified() {
+      const verified = localStorage.getItem(GATE_KEY);
+      if (verified) {
+        showContent();
+      } else {
+        gate.style.display = 'flex';
+        content.style.display = 'none';
+      }
+    }
 
-/* UI helpers */
-function bindUIHelpers(){
-  menuBtn.addEventListener('click', ()=>friendsCard.scrollIntoView({behavior:'smooth'}));
-  document.getElementById('search').addEventListener('input', e => {
-    const q = e.target.value.toLowerCase();
-    Array.from(postsList.children).forEach(post => {
-      post.style.display = (post.textContent.toLowerCase().includes(q) ? '' : 'none');
-    });
-  });
-}
-
-/* Small CSS injection */
-(function(){ const s = document.createElement('style'); s.innerHTML = `@keyframes spin{to{transform:rotate(360deg)}}`; document.head.appendChild(s); })();
-</script>
-
-<!-- Deployment notes -->
-<!--
-  1) Add your Firebase config in FIREBASE_CONFIG above.
-  2) Firestore rules example (require auth for writes):
-     service cloud.firestore {
-       match /databases/{database}/documents {
-         match /posts/{postId} {
-           allow read: if true;
-           allow create: if request.auth != null;
-           allow update: if request.auth != null;
-         }
-         match /posts/{postId}/pollVotes/{voteId} {
-           allow read: if request.auth != null;
-           allow create: if request.auth != null && request.auth.uid == voteId;
-         }
-       }
-     }
-  3) To enable automatic subscription checking against YouTube, you'll need server-side OAuth + YouTube Data API; the demo uses a manual "Open Channel -> Sign in" flow and stores verification locally.
--->
-
-</body>
-                  </html>
+    openBtn.addEventListener('click', () => openYouTube(CHANNEL_URL));
+    verifyBtn.addEventListener('click', verifyAndEnter);
+    skipBtn.addEventListener('click', () => {
+      localStorage.setItem(GATE_KEY, JSON.stringify({ at:
+
