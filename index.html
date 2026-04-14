@@ -1,122 +1,158 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pigeon | Pro</title>
+    <title>Pigeon | Live Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #050505; color: white; font-family: sans-serif; overflow: hidden; margin: 0; }
-        .gate { position: fixed; inset: 0; z-index: 9999; display: flex; items: center; justify-content: center; background: #075e54; }
+        body { background-color: #050505; color: white; font-family: sans-serif; overflow-x: hidden; margin: 0; }
         .hidden { display: none !important; }
-        #sidebar { transform: translateX(-100%); transition: 0.3s; position: fixed; inset: 0; width: 260px; background: #111; z-index: 8000; border-right: 1px solid #333; }
+        
+        /* THE DOWN BAR */
+        nav { background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #1a1a1a; position: fixed; bottom: 0; width: 100%; height: 75px; display: flex; justify-content: space-around; align-items: center; z-index: 5000; }
+        .plus-btn { background: white; color: black; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: translateY(-30px); border: 6px solid #050505; box-shadow: 0 10px 20px rgba(0,0,0,0.5); cursor: pointer; }
+        
+        /* SIDEBAR */
+        #sidebar { transform: translateX(-100%); transition: 0.3s ease; position: fixed; inset: 0; width: 80%; max-width: 300px; background: #111; z-index: 10000; border-right: 1px solid #222; }
         #sidebar.open { transform: translateX(0); }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 7000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .logo-text { background: linear-gradient(to right, #25d366, #1da1f2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
+        
+        /* MODALS */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .upload-area { background: #1a1a1a; border: 2px dashed #333; border-radius: 20px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="step1" class="gate">
-        <div class="bg-white p-8 rounded-3xl text-black text-center w-80 shadow-2xl">
-            <h1 class="text-5xl mb-4">🕊️</h1>
-            <h2 class="text-2xl font-black mb-4 uppercase">Unlock Pigeon</h2>
-            <p class="text-gray-500 mb-6 text-sm">Subscribe to verify your account.</p>
-            <a href="https://www.youtube.com/@YOUR_CHANNEL?sub_confirmation=1" target="_blank" onclick="showUnlock()" class="block bg-red-600 text-white py-4 rounded-xl font-black mb-4">SUBSCRIBE</a>
-            <button id="unlockBtn" onclick="openApp()" class="hidden w-full bg-green-500 text-black font-bold py-3 rounded-xl">ENTER SITE</button>
+    <div id="gate" class="fixed inset-0 bg-black z-[20000] flex items-center justify-center p-6">
+        <div class="bg-white p-10 rounded-[40px] text-black text-center w-full max-w-sm">
+            <h1 class="text-6xl mb-4">🕊️</h1>
+            <h2 class="text-2xl font-black mb-2 uppercase tracking-tighter">Identity Check</h2>
+            <p class="text-gray-500 mb-8 text-sm">Open the YouTube app and Subscribe to <b>Ultra-wk8ed</b> to unlock the database.</p>
+            <button onclick="masterUnlock()" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg">OPEN YOUTUBE</button>
+            <button id="unlock-btn" onclick="showApp()" class="hidden w-full bg-green-500 text-black font-black py-4 rounded-2xl mt-4 animate-bounce">I SUBBED, ENTER</button>
         </div>
     </div>
 
-    <div id="mainApp" class="hidden">
-        <header class="fixed top-0 w-full bg-[#050505] p-4 flex justify-between items-center border-b border-gray-900 z-50">
-            <div class="flex items-center space-x-4">
-                <i class="fa-solid fa-bars text-xl cursor-pointer" onclick="toggleMenu()"></i>
-                <span class="logo-text text-2xl uppercase italic cursor-pointer" onclick="openGame()">Pigeon</span>
+    <div id="mainApp" class="hidden min-h-screen">
+        <header class="p-4 flex items-center gap-4 border-b border-gray-900 sticky top-0 bg-black/80 backdrop-blur-md z-50">
+            <i class="fa-solid fa-bars-staggered text-xl cursor-pointer" onclick="toggleSidebar()"></i>
+            <div class="flex items-center gap-2 cursor-pointer" onclick="startGame()">
+                <span class="text-2xl">🕊️<span class="text-[10px] absolute -mt-1">📜</span></span>
+                <span class="font-black italic text-xl">PIGEON</span>
             </div>
-            <div class="w-10 h-10 rounded-full bg-blue-600"></div>
         </header>
 
-        <main id="feed" class="max-w-xl mx-auto pt-24 px-4 space-y-6 pb-28">
+        <main id="feed" class="max-w-xl mx-auto px-4 pt-6 pb-32 space-y-4">
             </main>
 
-        <nav class="fixed bottom-0 w-full bg-[#050505] border-t border-gray-900 flex justify-around items-center py-5 z-50">
-            <i class="fa-solid fa-house text-xl"></i>
-            <button onclick="openPostModal()" class="bg-white text-black w-14 h-14 rounded-full -mt-12 shadow-2xl flex items-center justify-center">
-                <i class="fa-solid fa-plus text-3xl"></i>
-            </button>
-            <i class="fa-solid fa-user text-xl"></i>
+        <nav>
+            <i class="fa-solid fa-house text-xl text-white"></i>
+            <div class="plus-btn" onclick="openMenu()"><i class="fa-solid fa-plus text-2xl"></i></div>
+            <i class="fa-solid fa-user text-xl text-gray-500"></i>
         </nav>
     </div>
 
-    <div id="postModal" class="modal">
-        <div class="bg-[#111] p-6 rounded-3xl w-full max-w-lg border border-gray-700">
-            <h2 class="font-bold text-green-500 mb-4">NEW POST</h2>
-            <textarea id="postText" placeholder="What's happening?" class="bg-transparent w-full h-24 text-xl outline-none mb-4"></textarea>
-            <input type="text" id="mediaUrl" placeholder="Paste Image or Video URL (Optional)" class="bg-[#222] w-full p-3 rounded-xl mb-4 text-sm outline-none border border-gray-800">
-            
-            <div class="flex gap-2">
-                <button onclick="submitPost('image')" class="flex-1 bg-blue-600 py-2 rounded-xl text-xs font-bold uppercase">Add Image</button>
-                <button onclick="submitPost('video')" class="flex-1 bg-purple-600 py-2 rounded-xl text-xs font-bold uppercase">Add Video</button>
-                <button onclick="submitPost('text')" class="flex-1 bg-green-500 text-black py-2 rounded-xl text-xs font-bold">Text Only</button>
+    <aside id="sidebar">
+        <div class="p-6">
+            <h2 class="text-xs font-black text-gray-500 uppercase tracking-widest mb-6">Friends Tag</h2>
+            <input type="text" placeholder="Search accounts..." class="w-full bg-[#1a1a1a] p-3 rounded-xl mb-6 outline-none text-sm">
+            <div class="flex items-center gap-4 p-2">
+                <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center font-bold">U</div>
+                <span class="font-bold">Ultra-wk8ed</span>
             </div>
-            <button onclick="closePost()" class="w-full mt-4 text-gray-500 text-xs uppercase">Cancel</button>
+        </div>
+    </aside>
+
+    <div id="createMenu" class="modal" onclick="closeAll()">
+        <div class="bg-[#111] w-full max-w-sm p-6 rounded-[35px] border border-gray-800" onclick="event.stopPropagation()">
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="openEditor('image')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-image text-green-500"></i> Image</button>
+                <button onclick="openEditor('video')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-play text-blue-500"></i> Video</button>
+                <button onclick="openEditor('poll')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-square-poll-vertical text-yellow-500"></i> Voting Poll</button>
+                <button onclick="openEditor('voice')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-microphone text-red-500"></i> Voice</button>
+                <button onclick="openEditor('text')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-pen"></i> Text</button>
+            </div>
         </div>
     </div>
 
-    <div id="gameScreen" class="modal">
-        <canvas id="gameCanvas" width="320" height="400" class="border-2 border-white rounded-xl"></canvas>
-        <button onclick="closeGame()" class="mt-4 bg-red-600 px-6 py-2 rounded-full">EXIT</button>
+    <div id="editor" class="modal" onclick="closeAll()">
+        <div class="bg-[#111] w-full max-w-lg p-6 rounded-[35px] border border-gray-800" onclick="event.stopPropagation()">
+            <div id="uploadBox" class="upload-area mb-4" onclick="setLink()">
+                <i class="fa-solid fa-plus text-2xl text-gray-600"></i>
+                <p class="text-[10px] text-gray-500 font-black uppercase">Add Media URL</p>
+            </div>
+            <textarea id="postContent" placeholder="Write message..." class="w-full bg-transparent text-xl outline-none h-32 resize-none mb-4"></textarea>
+            <input type="hidden" id="tempUrl">
+            <button onclick="savePost()" class="w-full bg-green-500 text-black font-black py-4 rounded-2xl uppercase">Post Live</button>
+        </div>
     </div>
 
-    <script>
-        function showUnlock() { setTimeout(() => { document.getElementById('unlockBtn').classList.remove('hidden'); }, 2000); }
-        function openApp() { document.getElementById('step1').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); document.body.style.overflow="auto"; }
-        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-        function openPostModal() { document.getElementById('postModal').style.display = 'flex'; }
-        function closePost() { document.getElementById('postModal').style.display = 'none'; }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        function submitPost(type) {
-            const text = document.getElementById('postText').value;
-            const url = document.getElementById('mediaUrl').value;
+        // 🔥 PASTE YOUR FIREBASE CONFIG HERE TO MAKE IT WORK ON GITHUB 🔥
+        const firebaseConfig = {
+            apiKey: "PASTE_HERE",
+            authDomain: "PASTE_HERE",
+            projectId: "PASTE_HERE",
+            storageBucket: "PASTE_HERE",
+            messagingSenderId: "PASTE_HERE",
+            appId: "PASTE_HERE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const postsRef = collection(db, "posts");
+
+        // LOAD POSTS IN REAL TIME
+        const q = query(postsRef, orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = "bg-[#0f0f0f] border border-gray-900 p-5 rounded-[2rem]";
+                let media = data.url ? `<img src="${data.url}" class="w-full rounded-2xl mb-3">` : "";
+                if(data.type === 'video') media = `<video src="${data.url}" controls class="w-full rounded-2xl mb-3"></video>`;
+                div.innerHTML = `${media}<p class="text-lg">${data.text}</p>`;
+                feed.appendChild(div);
+            });
+        });
+
+        // SAVE POST FUNCTION
+        window.savePost = async () => {
+            const text = document.getElementById('postContent').value;
+            const url = document.getElementById('tempUrl').value;
             if(!text && !url) return;
+            await addDoc(postsRef, { text, url, type: window.currentMode, timestamp: Date.now() });
+            window.closeAll();
+            document.getElementById('postContent').value = "";
+            document.getElementById('tempUrl').value = "";
+        };
+    </script>
 
-            const card = document.createElement('div');
-            card.className = "bg-[#111] p-4 rounded-2xl border border-gray-800 mb-4";
-            
-            let mediaHtml = '';
-            if(type === 'image' && url) mediaHtml = `<img src="${url}" class="w-full rounded-xl mb-4">`;
-            if(type === 'video' && url) mediaHtml = `<video src="${url}" controls class="w-full rounded-xl mb-4"></video>`;
-
-            card.innerHTML = `
-                <div class="flex items-center gap-2 mb-3">
-                    <div class="w-8 h-8 rounded-full bg-gray-700"></div>
-                    <span class="font-bold text-sm text-gray-300">User</span>
-                </div>
-                ${mediaHtml}
-                <p class="text-lg">${text}</p>
-                <div class="mt-4 flex gap-6 text-gray-600"><i class="fa-solid fa-heart"></i><i class="fa-solid fa-share"></i></div>
-            `;
-            
-            document.getElementById('feed').prepend(card);
-            document.getElementById('postText').value = ""; document.getElementById('mediaUrl').value = "";
-            closePost();
+    <script>
+        function masterUnlock() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if(isMobile) window.location.href = `vnd.youtube://www.youtube.com/@Ultra-wk8ed`;
+            else window.open(`https://www.youtube.com/@Ultra-wk8ed?sub_confirmation=1`, '_blank');
+            document.getElementById('unlock-btn').classList.remove('hidden');
         }
-
-        // Game Logic (Flappy)
-        const cvs = document.getElementById('gameCanvas'), ctx = cvs.getContext('2d');
-        let b = {y:200, v:0}, active = false;
-        function openGame() { document.getElementById('gameScreen').style.display = 'flex'; active=true; loop(); }
-        function closeGame() { document.getElementById('gameScreen').style.display = 'none'; active=false; }
-        function loop() {
-            if(!active) return;
-            ctx.fillStyle = "#4ec0ca"; ctx.fillRect(0,0,320,400);
-            b.v += 0.4; b.y += b.v; ctx.font = "30px Arial"; ctx.fillText("🕊️", 50, b.y);
-            if(b.y > 400 || b.y < 0) b.y = 200;
-            requestAnimationFrame(loop);
+        function showApp() { document.getElementById('gate').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function openMenu() { document.getElementById('createMenu').style.display = 'flex'; }
+        function openEditor(mode) { 
+            window.currentMode = mode; 
+            document.getElementById('createMenu').style.display = 'none'; 
+            document.getElementById('editor').style.display = 'flex';
+            document.getElementById('uploadBox').className = (mode === 'text' || mode === 'poll') ? 'hidden' : 'upload-area mb-4';
         }
-        cvs.onmousedown = () => { b.v = -7; };
+        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+        function setLink() { const url = prompt("Enter URL:"); if(url) document.getElementById('tempUrl').value = url; }
     </script>
 </body>
 </html>
-        
