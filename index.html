@@ -1,139 +1,207 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>My Website</title>
-  <style>
-    :root{ --green:#7CFC00; --bg:#ffffff; --text:#111 }
-    body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--text); min-height:100vh; }
-    main{ padding:32px; max-width:900px; margin:0 auto; }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>My Website — Subscription Gate</title>
+<style>
+  :root{
+    --green: #7CFC00;
+    --bg: #f7f7f7;
+    --card: #ffffff;
+    --muted: #666;
+    --text: #111;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+  main{padding:32px;max-width:900px;margin:0 auto}
 
-    .gate { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); z-index:9999; }
-    .gate-card { width:min(720px,92%); background:#fff; border-radius:12px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
-    .gate-header { display:flex; gap:12px; align-items:flex-start; }
-    .gate-title { font-weight:800; font-size:20px; margin:0; }
-    .gate-body { margin-top:10px; color:#444; }
-    .btn { display:inline-block; padding:10px 14px; border-radius:8px; cursor:pointer; border:0; font-weight:700; }
-    .btn-primary { background:#ff4d4f; color:#fff; }
-    .btn-outline { background:transparent; border:1px solid rgba(0,0,0,0.08); color:#111; }
-    .gate-actions { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }
+  /* Gate overlay (dark) */
+  .gate-overlay {
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.72);z-index:9999;padding:20px;
+  }
+  .gate-box {
+    width:min(760px,96%);background:linear-gradient(180deg,#0f1724,#111827);color:#fff;border-radius:12px;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,0.6);
+  }
+  .gate-header{display:flex;gap:12px;align-items:flex-start}
+  .logo{font-size:28px}
+  .gate-title{font-weight:800;margin:0 0 6px 0}
+  .gate-body{color:rgba(255,255,255,0.9);margin-top:6px}
+  .controls{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+  .btn{padding:10px 14px;border-radius:8px;border:0;cursor:pointer;font-weight:700}
+  .btn-primary{background:#ff4d4f;color:#fff}
+  .btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.08);color:#fff}
 
-    .verifying { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000; color:var(--green); z-index:10000; flex-direction:column; gap:12px; font-weight:800; font-size:20px; }
-    .spinner { width:48px; height:48px; border-radius:50%; border:4px solid rgba(124,252,0,0.12); border-top-color:var(--green); animation:spin 1s linear infinite; box-shadow:0 10px 40px rgba(0,0,0,0.6); }
-    @keyframes spin { to { transform:rotate(360deg); } }
+  /* Verifying overlay (black + green) */
+  .verifying {
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:#000;color:var(--green);z-index:10000;flex-direction:column;gap:12px;font-weight:800;font-size:20px;
+  }
+  .spinner {
+    width:48px;height:48px;border-radius:50%;border:4px solid rgba(124,252,0,0.12);border-top-color:var(--green);
+    animation:spin 1s linear infinite;box-shadow:0 10px 40px rgba(0,0,0,0.6);
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
 
-    .hint { margin-top:12px; font-size:13px; color:#666; }
-  </style>
+  /* small helpers */
+  .hint{font-size:13px;color:var(--muted);margin-top:8px}
+  .top-controls{position:fixed;right:16px;top:16px;z-index:2000}
+  .reset-btn{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:#fff}
+</style>
 </head>
 <body>
-  <div id="gate" class="gate" aria-hidden="true" style="display:none;">
-    <div class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+  <!-- top quick controls (visible for testing) -->
+  <div class="top-controls">
+    <button id="reset-btn" class="reset-btn" title="Reset gate/test">Reset Gate</button>
+  </div>
+
+  <!-- Gate overlay -->
+  <div id="gate" class="gate-overlay" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <div class="gate-box">
       <div class="gate-header">
-        <div style="font-size:28px">🕊️📜<span style="margin-left:-10px">🔴</span></div>
+        <div class="logo">🕊️📜<span style="margin-left:-8px">🔴</span></div>
         <div style="flex:1">
-          <h1 id="gate-title" class="gate-title">Please subscribe to continue</h1>
+          <h2 id="gate-title" class="gate-title">Please subscribe to proceed</h2>
           <div class="gate-body">
-            Click "Open Channel" to open the YouTube channel (app or web). After subscribing on YouTube, return and click "I subscribed — Verify".
-            <div class="hint">This demo uses manual confirmation. Automatic verification requires server-side Google OAuth + YouTube API.</div>
+            Click "Open Channel" to open the YouTube channel (app or web). After subscribing on YouTube, return here and click "I subscribed — Verify".
+            <div class="hint">This page uses a manual verification step. Automatic verification requires server-side Google OAuth + YouTube API.</div>
           </div>
 
-          <div class="gate-actions">
+          <div class="controls" style="margin-top:12px">
             <button id="open-channel" class="btn btn-outline">Open Channel</button>
             <button id="verify-btn" class="btn btn-primary">I subscribed — Verify</button>
-            <button id="skip-btn" class="btn btn-outline" title="For testing only">Skip (test)</button>
+            <button id="skip-btn" class="btn btn-outline" title="Testing only">Skip (test)</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="verifying" class="verifying" aria-hidden="true" style="display:none;">
+  <!-- Verifying overlay (black + green) -->
+  <div id="verifying" class="verifying" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
     <div id="verifying-text">Verifying subscription...</div>
   </div>
 
-  <main id="content" style="display:none;">
+  <!-- Your actual page content (visible by default) -->
+  <main id="content">
     <h1>Welcome to my site!</h1>
     <p>This is my main page.</p>
-    <p style="font-size:13px;color:#666;">To reset the gate for testing: open the console and run:
+    <p class="hint">To simulate first-time visit, use the Reset button or run in the console:
       <code>localStorage.removeItem('subscribed_v1'); localStorage.removeItem('sub_clicked_v1'); location.reload();</code>
     </p>
   </main>
 
-  <script>
-    // Replaced with your channel URL
-    const CHANNEL_URL = 'https://www.youtube.com/@Ultra-wk8ed';
+<script>
+  // Channel URL set to your channel
+  const CHANNEL_URL = 'https://www.youtube.com/@Ultra-wk8ed';
 
-    const GATE_KEY = 'subscribed_v1';
-    const CLICKED_KEY = 'sub_clicked_v1';
+  const GATE_KEY = 'subscribed_v1';
+  const CLICKED_KEY = 'sub_clicked_v1';
 
-    const gate = document.getElementById('gate');
-    const verifying = document.getElementById('verifying');
-    const verifyingText = document.getElementById('verifying-text');
-    const content = document.getElementById('content');
-    const openBtn = document.getElementById('open-channel');
-    const verifyBtn = document.getElementById('verify-btn');
-    const skipBtn = document.getElementById('skip-btn');
+  const gate = document.getElementById('gate');
+  const verifying = document.getElementById('verifying');
+  const verifyingText = document.getElementById('verifying-text');
+  const content = document.getElementById('content');
+  const openBtn = document.getElementById('open-channel');
+  const verifyBtn = document.getElementById('verify-btn');
+  const skipBtn = document.getElementById('skip-btn');
+  const resetBtn = document.getElementById('reset-btn');
 
-    function openYouTube(channelUrl) {
-      const web = channelUrl;
-      const channelIdMatch = channelUrl.match(/\/channel\/([^\/\?]+)/);
-      const userMatch = channelUrl.match(/\/@?([^\/\?]+)/);
-      const attempts = [];
-      if (channelIdMatch) attempts.push(`vnd.youtube://channel/${channelIdMatch[1]}`);
-      if (userMatch) attempts.push(`vnd.youtube://user/${userMatch[1]}`);
-      attempts.push(`vnd.youtube://`);
-      attempts.push(web);
-      try {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = attempts[0];
-        document.body.appendChild(iframe);
-        setTimeout(() => document.body.removeChild(iframe), 500);
-      } catch (e) {}
-      window.open(web, '_blank', 'noopener');
-      localStorage.setItem(CLICKED_KEY, JSON.stringify({ at: Date.now(), url: channelUrl }));
+  // Try opening YouTube app deep link then fallback to web.
+  function openYouTube(channelUrl) {
+    const web = channelUrl;
+    // Try deep link forms (best-effort)
+    const channelMatch = channelUrl.match(/\/channel\/([^\/\?]+)/);
+    const userMatch = channelUrl.match(/\/@([^\/\?]+)/);
+    const attempts = [];
+    if (channelMatch) attempts.push(`vnd.youtube://channel/${channelMatch[1]}`);
+    if (userMatch) attempts.push(`vnd.youtube://user/${userMatch[1]}`);
+    attempts.push('vnd.youtube://');
+
+    // Attempt using iframe (may be blocked by browsers); always open web fallback in a new tab.
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = attempts[0];
+      document.body.appendChild(iframe);
+      setTimeout(() => document.body.removeChild(iframe), 500);
+    } catch (e) { /* ignore */ }
+
+    // Always open web fallback reliably:
+    window.open(web, '_blank', 'noopener');
+
+    // Record that the user clicked the channel link (required before verify)
+    localStorage.setItem(CLICKED_KEY, JSON.stringify({ at: Date.now(), url: channelUrl }));
+  }
+
+  // Show verifying overlay then mark verified (manual demo)
+  async function verifyAndEnter() {
+    const clicked = localStorage.getItem(CLICKED_KEY);
+    if (!clicked) {
+      alert('Please click "Open Channel" first and subscribe on YouTube, then return and click Verify.');
+      return;
     }
 
-    async function verifyAndEnter() {
-      const clicked = localStorage.getItem(CLICKED_KEY);
-      if (!clicked) {
-        alert('Please click "Open Channel" first and subscribe on YouTube, then return and click Verify.');
-        return;
-      }
+    verifyingText.textContent = 'Verifying subscription...';
+    verifying.style.display = 'flex';
 
-      verifyingText.textContent = 'Verifying subscription...';
-      verifying.style.display = 'flex';
+    // simulate network/verification delay
+    await new Promise(r => setTimeout(r, 1400));
 
-      await new Promise(r => setTimeout(r, 1400));
+    // save verified marker locally
+    localStorage.setItem(GATE_KEY, JSON.stringify({ at: Date.now(), channel: CHANNEL_URL }));
 
-      localStorage.setItem(GATE_KEY, JSON.stringify({ at: Date.now(), channel: CHANNEL_URL }));
+    // show success briefly
+    verifyingText.textContent = 'Subscription verified — welcome!';
+    await new Promise(r => setTimeout(r, 700));
 
-      verifyingText.textContent = 'Subscription verified — welcome!';
-      await new Promise(r => setTimeout(r, 700));
+    verifying.style.display = 'none';
+    hideGate();
+  }
 
-      verifying.style.display = 'none';
-      showContent();
+  function hideGate() {
+    gate.style.display = 'none';
+    // content remains visible; you can add any reveal animations here
+  }
+
+  function showGate() {
+    gate.style.display = 'flex';
+  }
+
+  function init() {
+    // show gate only if not verified
+    const verified = localStorage.getItem(GATE_KEY);
+    if (verified) {
+      // user previously verified -> show content and no gate
+      hideGate();
+    } else {
+      // show gate overlay (content stays visible behind)
+      showGate();
     }
+  }
 
-    function showContent() {
-      gate.style.display = 'none';
-      content.style.display = 'block';
-    }
+  // Buttons
+  openBtn.addEventListener('click', () => openYouTube(CHANNEL_URL));
+  verifyBtn.addEventListener('click', verifyAndEnter);
+  skipBtn.addEventListener('click', () => {
+    // testing helper: mark verified and hide gate
+    localStorage.setItem(GATE_KEY, JSON.stringify({ at: Date.now(), channel: CHANNEL_URL, test: true }));
+    hideGate();
+  });
 
-    function hideGateShowContentIfVerified() {
-      const verified = localStorage.getItem(GATE_KEY);
-      if (verified) {
-        showContent();
-      } else {
-        gate.style.display = 'flex';
-        content.style.display = 'none';
-      }
-    }
+  resetBtn.addEventListener('click', () => {
+    if (!confirm('Reset gate state? This will clear local verification.')) return;
+    localStorage.removeItem(GATE_KEY);
+    localStorage.removeItem(CLICKED_KEY);
+    location.reload();
+  });
 
-    openBtn.addEventListener('click', () => openYouTube(CHANNEL_URL));
-    verifyBtn.addEventListener('click', verifyAndEnter);
-    skipBtn.addEventListener('click', () => {
-      localStorage.setItem(GATE_KEY, JSON.stringify({ at:
-
+  // Initialize after DOM ready
+  document.addEventListener('DOMContentLoaded', init);
+
+  // Debug helper: if page is ever blank, you can run this in console to inspect keys:
+  // console.log('subscribed=', localStorage.getItem('subscribed_v1'), 'clicked=', localStorage.getItem('sub_clicked_v1'));
+</script>
+</body>
+</html>
