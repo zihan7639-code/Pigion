@@ -1,674 +1,453 @@
-            <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PIGEON — Live Prompt Demo</title>
-
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/a2d9f8d1f3.js" crossorigin="anonymous"></script>
-
-  <!-- Firebase (compat libraries for simpler migration) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
+  <title>r/MockRed — Subscription Gate to Your Channel</title>
+  <meta name="description" content="Red-themed Reddit-like demo with a subscription gate that links to a YouTube channel." />
   <style>
-    /* Small helpers for dashed media input box appearance */
-    .dashed-box {
-      border: 2px dashed #cbd5e1; /* slate-300 */
-      background: #f8fafc; /* slate-50 */
+    :root{
+      --bg:linear-gradient(180deg,#fff6f6 0%, #fff 120%);
+      --card:#fff;
+      --muted:#6b2f2f;
+      --text:#1b0b0b;
+      --accent:#ff4d4f;
+      --primary:#c21a1a;
+      --green-verify:#7CFC00;
+      --radius:12px;
+      --container:1100px;
+      --shadow: 0 8px 24px rgba(15,23,36,0.08);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Color Emoji";
     }
-    /* modal background */
-    .modal-bg { background: rgba(0,0,0,0.6); }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      font-size:15px;
+      line-height:1.45;
+    }
+    .container{max-width:var(--container);margin:0 auto;padding:20px;}
+    header.site-header{background:rgba(255,255,255,0.9);backdrop-filter: blur(6px);border-bottom:1px solid rgba(194,26,26,0.06);position:sticky;top:0;z-index:60}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px}
+    .brand{font-weight:800;color:var(--primary);text-decoration:none;font-size:20px}
+    .header-actions{display:flex;gap:12px;align-items:center}
+    .search{padding:9px 12px;border-radius:10px;border:1px solid rgba(194,26,26,0.06);background:#fff;min-width:220px}
+    select{padding:9px;border-radius:10px;border:1px solid rgba(194,26,26,0.06);background:#fff}
+    .main-grid{display:grid;grid-template-columns:1fr 320px;gap:22px;padding:28px 0}
+    @media (max-width:980px){.main-grid{grid-template-columns:1fr}}
+    .compose{background:var(--card);border-radius:14px;padding:14px;border:1px solid rgba(194,26,26,0.06);margin-bottom:18px;box-shadow:var(--shadow)}
+    .compose-form{display:flex;flex-direction:column;gap:10px}
+    .compose-form input,.compose-form textarea{padding:12px;border-radius:10px;border:1px solid rgba(15,23,36,0.06);background:#fff;outline:none}
+    .compose-actions{display:flex;gap:10px;justify-content:flex-end}
+    .btn{padding:9px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--primary);color:#fff}
+    .btn.outline{background:transparent;border:1px solid rgba(15,23,36,0.06);color:var(--text)}
+    .posts{display:flex;flex-direction:column;gap:14px}
+    .post{display:grid;grid-template-columns:64px 1fr;gap:14px;background:var(--card);padding:14px;border-radius:14px;border:1px solid rgba(194,26,26,0.04);box-shadow:var(--shadow)}
+    .vote-col{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:6px}
+    .vote-btn{background:transparent;border:0;cursor:pointer;color:var(--muted);font-size:18px}
+    .vote-btn.active{color:var(--accent);font-weight:800}
+    .score{font-weight:800;color:var(--text)}
+    .post-main h3{margin:0;font-size:17px;color:var(--primary)}
+    .meta{font-size:13px;color:var(--muted);margin-top:6px}
+    .post-body{margin-top:10px;color:var(--text);white-space:pre-wrap}
+    .post-actions{display:flex;gap:12px;margin-top:12px;align-items:center}
+    .comments{margin-top:12px;border-top:1px dashed rgba(194,26,26,0.04);padding-top:12px}
+    .comment{padding:10px;border-radius:10px;background:#fff6f6;border:1px solid rgba(194,26,26,0.02);margin-bottom:8px}
+    .sidebar .card{background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(194,26,26,0.04);margin-bottom:12px;box-shadow:var(--shadow)}
+    .trending li{margin-bottom:8px;color:var(--muted)}
+    .small{font-size:13px;color:var(--muted)}
+    .no-posts{padding:28px;text-align:center;color:var(--muted);background:linear-gradient(180deg, rgba(194,26,26,0.02), rgba(194,26,26,0.01));border-radius:12px}
+    @media (max-width:600px){
+      .post{grid-template-columns:1fr}
+      .vote-col{flex-direction:row;order:2;gap:12px;justify-content:flex-start}
+      .post-main{order:1}
+    }
+
+    /* Gate overlay */
+    .gate-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter: blur(2px)}
+    .gate-card{width:min(720px,94%);max-width:720px;background:linear-gradient(180deg,#fff,#fff6f6);border-radius:14px;padding:26px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 24px 64px rgba(0,0,0,0.55)}
+    .gate-header{display:flex;align-items:center;gap:14px}
+    .gate-brand{font-weight:900;color:var(--primary);font-size:20px}
+    .gate-lead{margin-top:8px;color:var(--muted)}
+    .gate-form{display:flex;gap:10px;margin-top:16px;align-items:center}
+    .gate-form input[type="email"]{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(15,23,36,0.06)}
+    .gate-actions{display:flex;gap:10px;align-items:center;margin-top:14px}
+    .gate-note{font-size:13px;color:var(--muted);margin-top:12px}
+
+    /* Verifying overlay */
+    .verifying-overlay{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:400;flex-direction:column;gap:12px;color:var(--green-verify);font-weight:800;font-size:20px}
+    .verifying-overlay .spinner{width:46px;height:46px;border-radius:50%;border:4px solid rgba(124,252,0,0.14);border-top-color:var(--green-verify);animation:spin 1s linear infinite;box-shadow:0 8px 28px rgba(0,0,0,0.6)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    a.muted-link{color:#ff7b7b;text-decoration:none;font-weight:700}
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans">
-
-  <!-- Full-screen Lock (Sub Gate) -->
-  <div id="lockOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black text-white">
-    <div class="text-center p-6 max-w-lg">
-      <h1 class="text-4xl mb-4">Locked</h1>
-      <p class="mb-6">Click "Unlock" to open the YouTube app (or browser fallback) and proceed to sign in.</p>
-      <div class="flex gap-4 justify-center">
-        <button id="unlockBtn" class="bg-red-500 px-6 py-3 rounded-lg shadow hover:bg-red-600">
-          Unlock
-        </button>
-        <button id="forceSignInBtn" class="bg-gray-700 px-6 py-3 rounded-lg shadow hover:bg-gray-800">
-          Sign in (Force)
-        </button>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#" id="home-link">r/MockRed</a>
+      <div class="header-actions">
+        <input id="search" class="search" placeholder="Search posts..." aria-label="Search posts" />
+        <select id="sort" aria-label="Sort posts">
+          <option value="hot">Hot</option>
+          <option value="new">New</option>
+          <option value="top">Top</option>
+        </select>
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- Sign-in Overlay -->
-  <div id="signInOverlay" class="fixed inset-0 z-40 hidden items-center justify-center modal-bg">
-    <div class="bg-white rounded-xl shadow p-8 w-full max-w-md text-center">
-      <h2 class="text-2xl font-semibold mb-4">Welcome to PIGEON</h2>
-      <p class="mb-4">Sign in with Google to continue</p>
-      <button id="googleSignIn" class="flex items-center justify-center gap-3 mx-auto px-4 py-3 bg-blue-600 text-white rounded-lg">
-        <i class="fab fa-google"></i> Sign in with Google
-      </button>
-      <p class="text-sm text-slate-500 mt-4">This uses Firebase Auth (Google Provider).</p>
-    </div>
-  </div>
-
-  <!-- App Container -->
-  <div id="app" class="min-h-screen hidden">
-
-    <!-- Header -->
-    <header class="flex items-center justify-between px-4 py-3 bg-white shadow-sm sticky top-0 z-30">
-      <div class="flex items-center gap-3">
-        <!-- Hamburger -->
-        <button id="menuBtn" class="p-2 rounded hover:bg-slate-100">
-          <i class="fas fa-bars fa-lg"></i>
-        </button>
-
-        <!-- Logo / Title -->
-        <div id="logo" class="flex items-center gap-2 cursor-pointer select-none" title="Play Flappy Pigeon">
-          <span class="text-2xl">🕊️📜🔴</span>
-          <span class="font-bold tracking-wider text-xl">PIGEON</span>
-        </div>
-      </div>
-
-      <!-- Right (user info) -->
-      <div class="flex items-center gap-3">
-        <div id="userDisplay" class="flex items-center gap-2"></div>
-        <button id="signOutBtn" class="text-sm text-red-500 hidden">Sign out</button>
-      </div>
-    </header>
-
-    <!-- Main -->
-    <div class="flex">
-      <!-- Friends Sidebar -->
-      <aside id="friendsSidebar" class="fixed left-0 top-0 h-full w-80 bg-white shadow transform -translate-x-full transition-transform z-40">
-        <div class="p-4 border-b">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Friends</h3>
-            <button id="closeFriends" class="p-1 hover:bg-slate-100 rounded"><i class="fas fa-times"></i></button>
+  <main class="container main-grid" id="main-content" aria-hidden="true">
+    <section class="feed" aria-label="Posts feed">
+      <div class="compose">
+        <form id="compose-form" class="compose-form" aria-label="Create post">
+          <input id="compose-title" type="text" placeholder="Post title" required minlength="3" aria-label="Post title" />
+          <div style="display:flex;gap:10px;">
+            <input id="compose-author" type="text" placeholder="u/username (optional)" aria-label="Author" style="flex:1"/>
+            <select id="compose-type" aria-label="Type" style="width:140px">
+              <option value="text">Text</option>
+              <option value="link">Link</option>
+            </select>
           </div>
-          <div class="mt-3">
-            <input id="friendSearch" placeholder="Search..." class="w-full px-3 py-2 border rounded focus:outline-none" />
+          <textarea id="compose-body" placeholder="Write something or paste a link..." rows="3" aria-label="Post body"></textarea>
+          <div class="compose-actions">
+            <button class="btn outline" type="reset">Reset</button>
+            <button class="btn primary" type="submit">Post</button>
           </div>
-        </div>
+        </form>
+      </div>
 
-        <div id="friendList" class="p-4 space-y-3 overflow-auto h-[calc(100%-120px)]">
-          <!-- dynamically filled -->
-        </div>
-      </aside>
+      <div id="posts" class="posts" role="list" aria-live="polite"></div>
+    </section>
 
-      <!-- Content -->
-      <main class="flex-1 mx-auto max-w-2xl w-full pt-6 px-4">
-        <!-- Create / Composer preview area -->
-        <div id="composerArea" class="mb-4">
-          <div id="activeComposer" class="bg-white p-4 rounded shadow dashed-box">
-            <div id="composerInner" class="space-y-3">
-              <textarea id="composerText" rows="3" placeholder="What's happening?" class="w-full p-3 border rounded"></textarea>
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="card about">
+        <h3 style="margin:0;color:var(--primary)">About r/MockRed</h3>
+        <p class="small" style="margin-top:8px">A red-themed demo. This demo requires a quick manual subscription to the channel to continue.</p>
+      </div>
 
-              <div id="mediaInputArea" class="hidden">
-                <label class="block text-sm font-medium">Media URL</label>
-                <input id="mediaUrl" placeholder="https://..." class="w-full p-2 border rounded" />
-              </div>
+      <div class="card rules">
+        <h4 style="margin:0;color:var(--primary)">Sort & Filters</h4>
+        <ul class="small" style="margin-top:8px">
+          <li>Sort by Hot / New / Top</li>
+          <li>Search filters titles & body</li>
+        </ul>
+      </div>
 
-              <div id="pollArea" class="hidden space-y-2">
-                <label class="block text-sm font-medium">Create a poll (2 options)</label>
-                <input id="pollOpt1" placeholder="Option 1" class="w-full p-2 border rounded" />
-                <input id="pollOpt2" placeholder="Option 2" class="w-full p-2 border rounded" />
-              </div>
+      <div class="card trending">
+        <h4 style="margin:0;color:var(--primary)">Trending</h4>
+        <ol id="trending-list" class="trending small" style="margin-top:8px"></ol>
+      </div>
+    </aside>
+  </main>
 
-              <div class="flex justify-end gap-3">
-                <button id="postBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Post</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Feed -->
-        <div id="feed" class="space-y-4">
-          <!-- posts inserted here -->
-        </div>
-      </main>
+  <footer class="site-footer">
+    <div class="container" style="padding:18px 0;text-align:center;color:var(--muted)">
+      <small>Demo — subscription gate links to your YouTube channel and uses manual verification (local only).</small>
     </div>
+  </footer>
 
-    <!-- Fixed Bottom Bar -->
-    <div class="fixed bottom-4 left-0 right-0 flex justify-center z-50 pointer-events-none">
-      <div class="relative pointer-events-auto">
-        <!-- Floating white circle + button -->
-        <button id="createBtn" class="w-16 h-16 bg-white rounded-full shadow flex items-center justify-center text-2xl">
-          <i class="fas fa-plus"></i>
-        </button>
-
-        <!-- + Menu -->
-        <div id="plusMenu" class="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-3 opacity-0 scale-75 transform transition-all">
-          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="image" title="Image"><i class="far fa-image fa-lg"></i></button>
-          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="video" title="Video"><i class="fas fa-video fa-lg"></i></button>
-          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="poll" title="Poll"><i class="fas fa-poll fa-lg"></i></button>
-          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="voice" title="Voice"><i class="fas fa-microphone fa-lg"></i></button>
-          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="text" title="Text"><i class="fas fa-font fa-lg"></i></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- DM Mockup Modal -->
-  <div id="dmModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-bg">
-    <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow">
-      <div class="p-4 border-b flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">A</div>
-          <div>
-            <div id="dmName" class="font-semibold">Alice</div>
-            <div class="text-xs text-slate-500">Online</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <button title="Voice call" class="p-2 hover:bg-slate-100 rounded"><i class="fas fa-phone"></i></button>
-          <button title="Video call" class="p-2 hover:bg-slate-100 rounded"><i class="fas fa-video"></i></button>
-          <button id="dmClose" class="p-2 hover:bg-slate-100 rounded"><i class="fas fa-times"></i></button>
-        </div>
-      </div>
-      <div class="p-4 h-64 overflow-auto" id="dmMessages">
-        <div class="text-sm text-slate-600">This is a DM mockup. Messages are not persisted.</div>
-      </div>
-      <div class="p-4 border-t flex gap-2">
-        <input id="dmInput" class="flex-1 p-2 border rounded" placeholder="Message..." />
-        <button id="dmSend" class="bg-blue-600 text-white px-3 rounded">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Flappy Pigeon Modal -->
-  <div id="gameModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-bg">
-    <div class="bg-white rounded-xl overflow-hidden shadow p-4">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-lg font-semibold">Flappy Pigeon</h3>
+  <!-- Subscription gate (manual flow to a YouTube channel) -->
+  <div id="gate" class="gate-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <div class="gate-card" role="document">
+      <div class="gate-header">
         <div>
-          <button id="resetGame" class="px-3 py-1 bg-slate-100 rounded mr-2">Reset</button>
-          <button id="closeGame" class="px-3 py-1 bg-red-500 text-white rounded">Close</button>
+          <div class="gate-brand">r/MockRed</div>
+          <div class="gate-lead">Please subscribe to continue</div>
         </div>
       </div>
-      <canvas id="gameCanvas" width="600" height="400" class="border"></canvas>
-      <p class="text-sm text-slate-500 mt-2">Press SPACE or click to flap.</p>
+
+      <p class="gate-note">Click "Subscribe on YouTube" to open the channel in a new tab, subscribe there, then return and click "I subscribed — Verify". If you prefer, enter an email (optional) before verifying.</p>
+
+      <div style="margin-top:12px">
+        <label class="small" for="gate-email">Email (optional)</label>
+        <input id="gate-email" type="email" placeholder="you@domain.com" style="width:100%;margin-top:8px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)"/>
+      </div>
+
+      <div class="gate-actions" style="margin-top:14px">
+        <button id="open-channel" class="btn outline" type="button">Subscribe on YouTube</button>
+        <button id="verify-subscribed" class="btn primary" type="button">I subscribed — Verify</button>
+      </div>
+
+      <div style="margin-top:12px" class="small">
+        Channel: <a id="channel-link" href="https://www.youtube.com/@Ultra-wk8ed" target="_blank" rel="noopener noreferrer">https://www.youtube.com/@Ultra-wk8ed</a>
+      </div>
     </div>
+  </div>
+
+  <!-- Verifying overlay -->
+  <div id="verifying" class="verifying-overlay" style="display:none" aria-hidden="true" role="status" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <div id="verifying-text">Verifying subscription...</div>
   </div>
 
   <script>
-    // ======= FIREBASE CONFIG - REPLACE WITH YOURS =======
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      // ...other config...
-    };
-    // ==================================================
+    (function(){
+      const CHANNEL_URL = 'https://www.youtube.com/@Ultra-wk8ed';
+      const SUB_KEY = 'rm_subscribed_channel_v1';
+      const POSTS_KEY = 'rm_posts_v1';
+      const VOTES_KEY = 'rm_votes_v1';
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+      const gate = document.getElementById('gate');
+      const openChannelBtn = document.getElementById('open-channel');
+      const verifyBtn = document.getElementById('verify-subscribed');
+      const gateEmail = document.getElementById('gate-email');
+      const verifying = document.getElementById('verifying');
+      const verifyingText = document.getElementById('verifying-text');
+      const mainContent = document.getElementById('main-content');
 
-    // ---------- Elements ----------
-    const lockOverlay = document.getElementById('lockOverlay');
-    const signInOverlay = document.getElementById('signInOverlay');
-    const unlockBtn = document.getElementById('unlockBtn');
-    const forceSignInBtn = document.getElementById('forceSignInBtn');
-    const googleSignIn = document.getElementById('googleSignIn');
-    const appEl = document.getElementById('app');
-    const signOutBtn = document.getElementById('signOutBtn');
-    const userDisplay = document.getElementById('userDisplay');
+      const load = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+      const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
 
-    const menuBtn = document.getElementById('menuBtn');
-    const friendsSidebar = document.getElementById('friendsSidebar');
-    const closeFriends = document.getElementById('closeFriends');
-    const friendList = document.getElementById('friendList');
-    const friendSearch = document.getElementById('friendSearch');
+      // If user is already verified, enter immediately
+      const sub = load(SUB_KEY);
+      if (!sub) showGate(); else enterSite();
 
-    const createBtn = document.getElementById('createBtn');
-    const plusMenu = document.getElementById('plusMenu');
-    const createOpts = document.querySelectorAll('.createOpt');
-
-    const mediaInputArea = document.getElementById('mediaInputArea');
-    const pollArea = document.getElementById('pollArea');
-    const composerText = document.getElementById('composerText');
-    const mediaUrl = document.getElementById('mediaUrl');
-    const pollOpt1 = document.getElementById('pollOpt1');
-    const pollOpt2 = document.getElementById('pollOpt2');
-    const postBtn = document.getElementById('postBtn');
-
-    const feedEl = document.getElementById('feed');
-
-    const dmModal = document.getElementById('dmModal');
-    const dmClose = document.getElementById('dmClose');
-    const dmMessages = document.getElementById('dmMessages');
-    const dmInput = document.getElementById('dmInput');
-    const dmSend = document.getElementById('dmSend');
-    const dmName = document.getElementById('dmName');
-
-    const logo = document.getElementById('logo');
-    const gameModal = document.getElementById('gameModal');
-    const closeGame = document.getElementById('closeGame');
-    const resetGame = document.getElementById('resetGame');
-    const canvas = document.getElementById('gameCanvas');
-
-    // ---------- Flow: Unlock -> Sign-in -> App ----------
-    function tryOpenYouTube() {
-      // Try to open YouTube app via URL scheme; fallback to youtube.com
-      const appUrl = 'vnd.youtube://';
-      const webFallback = 'https://www.youtube.com';
-      // Attempt
-      window.location = appUrl;
-      // Fallback after 800ms
-      setTimeout(() => window.open(webFallback, '_blank'), 800);
-    }
-
-    unlockBtn.addEventListener('click', () => {
-      tryOpenYouTube();
-      // Hide lock, show sign-in overlay
-      lockOverlay.classList.add('hidden');
-      signInOverlay.classList.remove('hidden');
-    });
-
-    forceSignInBtn.addEventListener('click', () => {
-      lockOverlay.classList.add('hidden');
-      signInOverlay.classList.remove('hidden');
-    });
-
-    googleSignIn.addEventListener('click', () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(err => alert('Sign-in error: ' + err.message));
-    });
-
-    signOutBtn.addEventListener('click', () => {
-      auth.signOut();
-    });
-
-    // ---------- Auth state handling ----------
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        // show app
-        signInOverlay.classList.add('hidden');
-        appEl.classList.remove('hidden');
-        signOutBtn.classList.remove('hidden');
-        userDisplay.innerHTML = `
-          <img src="${user.photoURL || ''}" alt="" class="w-8 h-8 rounded-full object-cover"/>
-          <div class="text-sm">
-            <div class="font-medium">${user.displayName || user.email}</div>
-            <div class="text-xs text-slate-500">${user.email}</div>
-          </div>
-        `;
-        startListeningPosts();
-      } else {
-        // show sign-in
-        appEl.classList.add('hidden');
-        signInOverlay.classList.remove('hidden');
-        signOutBtn.classList.add('hidden');
-        userDisplay.innerHTML = '';
-        unsubscribePosts();
+      function showGate(){
+        gate.style.display = 'flex';
+        mainContent.setAttribute('aria-hidden','true');
+        document.body.style.overflow = 'hidden';
+        setTimeout(()=>gateEmail.focus(),150);
       }
-    });
 
-    // ---------- Friends Sidebar ----------
-    const mockFriends = [
-      {name: 'Alice', id: 'alice'},
-      {name: 'Bob', id: 'bob'},
-      {name: 'Carol', id: 'carol'},
-      {name: 'Dave', id: 'dave'},
-      {name: 'Eve', id: 'eve'},
-    ];
-    function renderFriends(list) {
-      friendList.innerHTML = '';
-      list.forEach(f => {
-        const btn = document.createElement('div');
-        btn.className = 'flex items-center gap-3 p-2 rounded hover:bg-slate-50 cursor-pointer';
-        btn.innerHTML = `
-          <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">${f.name[0]}</div>
-          <div>
-            <div class="font-medium">${f.name}</div>
-            <div class="text-xs text-slate-500">@${f.id}</div>
-          </div>
-        `;
-        btn.addEventListener('click', () => openDM(f));
-        friendList.appendChild(btn);
+      function enterSite(){
+        gate.style.display = 'none';
+        verifying.style.display = 'none';
+        mainContent.setAttribute('aria-hidden','false');
+        document.body.style.overflow = '';
+        initApp();
+      }
+
+      // Open channel in new tab
+      openChannelBtn.addEventListener('click', () => {
+        window.open(CHANNEL_URL, '_blank', 'noopener');
+        // helpful hint: optionally focus back
+        alert('Channel opened in a new tab. Subscribe there, then return and click "I subscribed — Verify".');
       });
-    }
-    renderFriends(mockFriends);
 
-    menuBtn.addEventListener('click', () => {
-      friendsSidebar.classList.remove('-translate-x-full');
-    });
-    closeFriends.addEventListener('click', () => {
-      friendsSidebar.classList.add('-translate-x-full');
-    });
-    friendSearch.addEventListener('input', () => {
-      const q = friendSearch.value.toLowerCase();
-      renderFriends(mockFriends.filter(f => f.name.toLowerCase().includes(q) || f.id.includes(q)));
-    });
+      // Manual verify button (user confirms they subscribed)
+      verifyBtn.addEventListener('click', async () => {
+        const emailVal = gateEmail.value.trim();
+        // show verifying overlay
+        showVerifying('Verifying subscription...');
+        // Simulate a verification delay
+        await new Promise(r => setTimeout(r, 1400));
+        // NOTE: Real automated verification requires Google OAuth + server to query subscriptions.
+        // Here we accept the user's manual confirmation for the demo.
+        save(SUB_KEY, { channel: CHANNEL_URL, email: emailVal || null, verifiedAt: Date.now() });
+        showVerifying('Subscription verified — welcome!');
+        await new Promise(r => setTimeout(r, 700));
+        hideVerifying();
+        enterSite();
+      });
 
-    // ---------- DM Mockup ----------
-    function openDM(friend) {
-      dmModal.classList.remove('hidden');
-      dmName.textContent = friend.name;
-      dmMessages.innerHTML = `<div class="text-sm text-slate-600">Chat with ${friend.name} (mockup).</div>`;
-    }
-    dmClose.addEventListener('click', () => dmModal.classList.add('hidden'));
-    dmSend.addEventListener('click', () => {
-      if (!dmInput.value) return;
-      const m = document.createElement('div');
-      m.className = 'text-right my-2';
-      m.innerHTML = `<span class="inline-block bg-blue-600 text-white px-3 py-2 rounded">${dmInput.value}</span>`;
-      dmMessages.appendChild(m);
-      dmInput.value = '';
-      dmMessages.scrollTop = dmMessages.scrollHeight;
-    });
-
-    // ---------- Creation Bottom Bar ----------
-    let plusOpen = false;
-    createBtn.addEventListener('click', () => {
-      plusOpen = !plusOpen;
-      plusMenu.style.opacity = plusOpen ? '1' : '0';
-      plusMenu.style.transform = plusOpen ? 'translateX(-50%) scale(1)' : 'translateX(-50%) scale(.75)';
-      if (!plusOpen) {
-        // reset composer UI
-        hideAllComposerSubareas();
+      function showVerifying(msg){
+        verifyingText.textContent = msg || 'Verifying subscription...';
+        verifying.style.display = 'flex';
       }
-    });
+      function hideVerifying(){ verifying.style.display = 'none'; }
 
-    function hideAllComposerSubareas() {
-      mediaInputArea.classList.add('hidden');
-      pollArea.classList.add('hidden');
-      composerText.placeholder = "What's happening?";
-    }
+      // The rest: same app logic (posts/votes)
+      function initApp(){
+        const id = () => 'p_' + Math.random().toString(36).slice(2,9);
+        const starter = [
+          { id: id(), title: 'Welcome to r/MockRed!', author: 'moderator', body: 'This demo links to your channel. Upvote posts you like — votes persist locally.', ts: Date.now()-1000*60*60, score: 8, comments: [{id:id(),author:'alice',text:'Nice demo!'}] },
+          { id: id(), title: 'Subscribe to the channel to enter', author: 'system', body: 'Thanks for supporting the channel!', ts: Date.now()-1000*60*30, score: 3, comments: [] },
+        ];
+        let posts = load(POSTS_KEY) || starter;
+        let votes = load(VOTES_KEY) || {};
 
-    let currentCreateType = 'text';
-    createOpts.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const type = btn.dataset.type;
-        currentCreateType = type;
-        // open composer area accordingly
-        hideAllComposerSubareas();
-        if (type === 'image' || type === 'video' || type === 'voice') {
-          mediaInputArea.classList.remove('hidden');
-        } else if (type === 'poll') {
-          pollArea.classList.remove('hidden');
-        } else if (type === 'text') {
-          // nothing else
+        const postsRoot = document.getElementById('posts');
+        const composeForm = document.getElementById('compose-form');
+        const searchInput = document.getElementById('search');
+        const sortSelect = document.getElementById('sort');
+        const trendingList = document.getElementById('trending-list');
+
+        render();
+        populateTrending();
+
+        composeForm.addEventListener('submit', e => {
+          e.preventDefault();
+          const title = document.getElementById('compose-title').value.trim();
+          const author = document.getElementById('compose-author').value.trim() || 'u/anon';
+          const body = document.getElementById('compose-body').value.trim();
+          if (!title || title.length < 3) return alert('Please add a title (3+ chars).');
+          const newPost = { id: id(), title, author, body, ts: Date.now(), score: 0, comments: [] };
+          posts.unshift(newPost);
+          save(POSTS_KEY, posts);
+          composeForm.reset();
+          render();
+          populateTrending();
+        });
+
+        searchInput.addEventListener('input', render);
+        sortSelect.addEventListener('change', render);
+
+        function formatTime(ts){
+          const diff = Math.floor((Date.now()-ts)/1000);
+          if (diff < 60) return diff + 's';
+          if (diff < 3600) return Math.floor(diff/60) + 'm';
+          if (diff < 86400) return Math.floor(diff/3600) + 'h';
+          return Math.floor(diff/86400) + 'd';
         }
-        // expand dashed composer visually
-        document.getElementById('activeComposer').classList.add('p-6');
-      });
-    });
+        function computeHotScore(post){
+          const ageHours = Math.max(1, (Date.now()-post.ts)/1000/3600);
+          return (post.score+1) / ageHours;
+        }
 
-    // ---------- Posting to Firestore ----------
-    function makePostObject(user, type, text, media) {
-      return {
-        uid: user.uid,
-        displayName: user.displayName || user.email,
-        text: text || '',
-        mediaUrl: media || '',
-        type: type || 'text',
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      };
-    }
+        function render(){
+          const qTerm = searchInput.value.trim().toLowerCase();
+          const sort = sortSelect.value;
+          let list = posts.slice();
 
-    postBtn.addEventListener('click', async () => {
-      const user = auth.currentUser;
-      if (!user) return alert('Please sign in.');
+          if (qTerm) list = list.filter(p => (p.title + ' ' + (p.body||'')).toLowerCase().includes(qTerm));
+          if (sort === 'new') list.sort((a,b)=>b.ts-a.ts);
+          else if (sort === 'top') list.sort((a,b)=>b.score-b.score);
+          else list.sort((a,b)=>computeHotScore(b)-computeHotScore(a));
 
-      let text = composerText.value.trim();
-      let media = mediaUrl.value.trim();
+          postsRoot.innerHTML = '';
+          if (list.length === 0){
+            postsRoot.innerHTML = '<div class="no-posts">No posts match your search — create one!</div>';
+            return;
+          }
 
-      if (currentCreateType === 'poll') {
-        const o1 = pollOpt1.value.trim();
-        const o2 = pollOpt2.value.trim();
-        if (!o1 || !o2) return alert('Provide 2 poll options.');
-        // Save poll as text: store JSON in text field for demo
-        const pollData = {option1: o1, option2: o2, votes: {option1:0, option2:0}};
-        await db.collection('posts').add({...makePostObject(user, 'poll', JSON.stringify(pollData), '')});
-        composerText.value = '';
-        pollOpt1.value = '';
-        pollOpt2.value = '';
-        return;
-      }
-
-      // If image/video/voice require media
-      if (['image','video','voice'].includes(currentCreateType)) {
-        if (!media) return alert('Provide a media URL.');
-      }
-
-      // Validate minimum content
-      if (!text && !media) return alert('Add text or media to post.');
-
-      await db.collection('posts').add(makePostObject(user, currentCreateType, text, media));
-      // Clear
-      composerText.value = '';
-      mediaUrl.value = '';
-      pollOpt1.value = '';
-      pollOpt2.value = '';
-      hideAllComposerSubareas();
-      plusMenu.style.opacity = '0';
-      plusMenu.style.transform = 'translateX(-50%) scale(.75)';
-      plusOpen = false;
-    });
-
-    // ---------- Live Feed using onSnapshot ----------
-    let unsubscribe = null;
-    function startListeningPosts() {
-      if (unsubscribe) return;
-      unsubscribe = db.collection('posts').orderBy('timestamp', 'desc')
-        .onSnapshot(snapshot => {
-          feedEl.innerHTML = '';
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            const time = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
-            const p = document.createElement('div');
-            p.className = 'bg-white p-4 rounded shadow';
-            p.innerHTML = `
-              <div class="flex items-start gap-3">
-                <div class="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">${(data.displayName||'U')[0]}</div>
-                <div class="flex-1">
-                  <div class="flex justify-between">
-                    <div>
-                      <div class="font-semibold">${escapeHtml(data.displayName)}</div>
-                      <div class="text-xs text-slate-500">${time.toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <div class="mt-3 text-slate-700 whitespace-pre-wrap">${renderPostContent(data)}</div>
+          for (const p of list){
+            const item = document.createElement('article');
+            item.className = 'post';
+            item.innerHTML = `
+              <div class="vote-col" data-id="${p.id}">
+                <button class="vote-btn up" title="upvote" aria-label="upvote">▲</button>
+                <div class="score">${p.score}</div>
+                <button class="vote-btn down" title="downvote" aria-label="downvote">▼</button>
+              </div>
+              <div class="post-main">
+                <h3>${escapeHtml(p.title)}</h3>
+                <div class="meta small">u/${escapeHtml(p.author)} · ${formatTime(p.ts)} · ${p.comments.length} comments</div>
+                <div class="post-body">${renderBody(p.body)}</div>
+                <div class="post-actions small">
+                  <a href="#" class="muted-link view-comments" data-id="${p.id}">Toggle comments</a>
+                  <a href="#" class="muted-link delete-post" data-id="${p.id}">Delete</a>
                 </div>
+                <div class="comments" data-id="${p.id}" style="display:none;"></div>
               </div>
             `;
-            feedEl.appendChild(p);
-          });
-        }, err => {
-          console.error('Snapshot error', err);
-        });
-    }
+            const upBtn = item.querySelector('.vote-btn.up');
+            const downBtn = item.querySelector('.vote-btn.down');
+            const scoreEl = item.querySelector('.score');
 
-    function unsubscribePosts() {
-      if (unsubscribe) {
-        unsubscribe();
-        unsubscribe = null;
-      }
-    }
+            const v = votes[p.id] || 0;
+            upBtn.classList.toggle('active', v===1);
+            downBtn.classList.toggle('active', v===-1);
 
-    function renderPostContent(data) {
-      const t = escapeHtml(data.text || '');
-      const media = data.mediaUrl || '';
-      const type = data.type || 'text';
-      // Poll detection
-      if (type === 'poll') {
-        try {
-          const poll = JSON.parse(data.text);
-          return `
-            <div class="p-3 rounded border">
-              <div class="font-medium mb-2">Poll</div>
-              <div class="space-y-2">
-                <button class="w-full text-left p-2 bg-slate-100 rounded">${escapeHtml(poll.option1)} <span class="float-right text-sm">${poll.votes?.option1||0}</span></button>
-                <button class="w-full text-left p-2 bg-slate-100 rounded">${escapeHtml(poll.option2)} <span class="float-right text-sm">${poll.votes?.option2||0}</span></button>
-              </div>
-            </div>
-          `;
-        } catch(e) {
-          return t;
-        }
-      }
+            upBtn.addEventListener('click', (e)=>{ e.preventDefault(); handleVote(p.id,1,p,scoreEl,upBtn,downBtn); });
+            downBtn.addEventListener('click', (e)=>{ e.preventDefault(); handleVote(p.id,-1,p,scoreEl,upBtn,downBtn); });
 
-      let mediaHtml = '';
-      if (media) {
-        if (isImageUrl(media)) mediaHtml = `<img src="${media}" class="mt-3 rounded max-h-64 w-auto"/>`;
-        else if (isYouTubeUrl(media)) mediaHtml = `<div class="mt-3"><iframe class="w-full h-56 rounded" src="${toEmbedYouTube(media)}" frameborder="0" allowfullscreen></iframe></div>`;
-        else if (isAudioUrl(media)) mediaHtml = `<audio class="mt-3" controls src="${media}"></audio>`;
-        else mediaHtml = `<a href="${media}" target="_blank" class="mt-3 text-blue-600 inline-block">${escapeHtml(media)}</a>`;
-      }
-      return `<div>${t}</div>${mediaHtml}`;
-    }
+            item.querySelector('.view-comments').addEventListener('click', (e)=>{ e.preventDefault(); toggleComments(p.id); });
+            item.querySelector('.delete-post').addEventListener('click', (e)=>{ e.preventDefault(); if (!confirm('Delete this post?')) return; posts = posts.filter(x=>x.id!==p.id); save(POSTS_KEY,posts); render(); populateTrending(); });
 
-    function isImageUrl(url) {
-      return /\.(jpeg|jpg|gif|png|webp|svg)$/i.test(url);
-    }
-    function isAudioUrl(url) {
-      return /\.(mp3|wav|ogg)$/i.test(url);
-    }
-    function isYouTubeUrl(url) {
-      return /youtube\.com|youtu\.be/.test(url);
-    }
-    function toEmbedYouTube(url) {
-      // convert to embed src
-      let id = '';
-      const m = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-      if (m) id = m[1];
-      else {
-        const short = url.match(/youtu\.be\/([0-9A-Za-z_-]{11})/);
-        if (short) id = short[1];
-      }
-      return id ? `https://www.youtube.com/embed/${id}` : url;
-    }
-    function escapeHtml(str) {
-      return (str || '').replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
-    }
-
-    // ---------- DM interactions already handled above ----------
-
-    // ---------- Logo -> Flappy Pigeon Game ----------
-    logo.addEventListener('click', () => {
-      gameModal.classList.remove('hidden');
-      startGame();
-    });
-    closeGame.addEventListener('click', () => {
-      stopGame();
-      gameModal.classList.add('hidden');
-    });
-    resetGame.addEventListener('click', () => {
-      stopGame();
-      startGame();
-    });
-
-    // Simple Flappy Pigeon implementation
-    let gInterval = null;
-    let ctx, W, H;
-    function startGame(){
-      const c = canvas;
-      ctx = c.getContext('2d');
-      W = c.width; H = c.height;
-      let bird = {x:80, y:H/2, vy:0, r:14};
-      let gravity = 0.6, lift = -10;
-      let pipes = [];
-      let frame = 0;
-      let score = 0;
-      let running = true;
-
-      function spawnPipe(){
-        const gap = 110;
-        const top = Math.random()*(H - gap - 80) + 20;
-        pipes.push({x:W, top: top, gap: gap});
-      }
-
-      function update(){
-        frame++;
-        ctx.fillStyle = '#87ceeb';
-        ctx.fillRect(0,0,W,H);
-        // bird
-        bird.vy += gravity;
-        bird.y += bird.vy;
-        if (bird.y + bird.r > H) { bird.y = H - bird.r; bird.vy = 0; running = false; }
-        if (bird.y - bird.r < 0) { bird.y = bird.r; bird.vy = 0; }
-
-        // spawn
-        if (frame % 90 === 0) spawnPipe();
-
-        // pipes
-        for (let i = pipes.length-1; i>=0; i--){
-          const p = pipes[i];
-          p.x -= 2.2;
-          // draw
-          ctx.fillStyle = '#228B22';
-          ctx.fillRect(p.x, 0, 48, p.top);
-          ctx.fillRect(p.x, p.top + p.gap, 48, H - (p.top + p.gap));
-          // collision check
-          if (bird.x + bird.r > p.x && bird.x - bird.r < p.x + 48) {
-            if (bird.y - bird.r < p.top || bird.y + bird.r > p.top + p.gap) {
-              running = false;
-            }
+            postsRoot.appendChild(item);
           }
-          if (p.x + 48 < bird.x && !p.passed) { score++; p.passed = true; }
-          if (p.x + 48 < 0) pipes.splice(i,1);
         }
 
-        // draw bird
-        ctx.fillStyle = '#FFF';
-        ctx.beginPath();
-        ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI*2);
-        ctx.fill();
-        ctx.fillStyle = '#000';
-        ctx.fillRect(bird.x + 6, bird.y - 5, 8, 4); // beak
-
-        // score
-        ctx.fillStyle = '#000';
-        ctx.font = '18px sans-serif';
-        ctx.fillText('Score: ' + score, 10, 25);
-
-        if (!running) {
-          ctx.fillStyle = 'rgba(0,0,0,0.5)';
-          ctx.fillRect(0,0,W,H);
-          ctx.fillStyle = '#fff';
-          ctx.font = '28px sans-serif';
-          ctx.fillText('Game Over - Score: ' + score, 60, H/2);
-          clearInterval(gInterval);
-          gInterval = null;
+        function handleVote(postId, dir, post, scoreEl, upBtn, downBtn){
+          const prev = votes[postId] || 0;
+          let next = prev === dir ? 0 : dir;
+          post.score = post.score - prev + next;
+          if (next === 0) delete votes[postId]; else votes[postId] = next;
+          save(POSTS_KEY, posts);
+          save(VOTES_KEY, votes);
+          scoreEl.textContent = post.score;
+          upBtn.classList.toggle('active', next === 1);
+          downBtn.classList.toggle('active', next === -1);
+          populateTrending();
         }
+
+        function renderBody(body){
+          if (!body) return '';
+          if (/^https?:\/\//i.test(body.trim())){
+            const url = escapeHtml(body.trim());
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+          }
+          return `<div>${escapeHtml(body)}</div>`;
+        }
+
+        function toggleComments(postId){
+          const container = document.querySelector('.comments[data-id="'+postId+'"]');
+          const post = posts.find(p=>p.id===postId);
+          if (!container) return;
+          if (container.style.display === 'none' || container.style.display === ''){
+            container.style.display = 'block';
+            container.innerHTML = '';
+            if (!post.comments || post.comments.length === 0){
+              container.innerHTML = '<div class="small muted" style="padding:8px">No comments yet.</div>';
+            } else {
+              for (const c of post.comments){
+                const cm = document.createElement('div');
+                cm.className = 'comment';
+                cm.innerHTML = `<div style="font-weight:700">${escapeHtml(c.author)}</div><div class="small" style="margin-top:6px">${escapeHtml(c.text)}</div>`;
+                container.appendChild(cm);
+              }
+            }
+            const form = document.createElement('form');
+            form.style.marginTop = '8px';
+            form.innerHTML = `
+              <input type="text" name="author" placeholder="u/username" style="width:45%;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06)"/>
+              <input type="text" name="text" placeholder="Add a comment..." style="width:calc(55% - 8px);padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);margin-left:8px"/>
+              <div style="margin-top:8px;text-align:right">
+                <button class="btn primary" type="submit">Comment</button>
+              </div>
+            `;
+            form.addEventListener('submit', (e)=>{
+              e.preventDefault();
+              const author = (form.author.value || 'u/anon').trim();
+              const text = (form.text.value || '').trim();
+              if (!text) return alert('Comment cannot be empty.');
+              post.comments.push({ id: id(), author, text });
+              save(POSTS_KEY, posts);
+              toggleComments(postId);
+              const newContainer = document.querySelector('.comments[data-id="'+postId+'"]');
+              if (newContainer) newContainer.style.display = 'block';
+              render();
+            });
+            container.appendChild(form);
+          } else {
+            container.style.display = 'none';
+          }
+        }
+
+        function populateTrending(){
+          const list = posts.slice().sort((a,b)=>b.score - a.score).slice(0,5);
+          trendingList.innerHTML = '';
+          for (const p of list){
+            const li = document.createElement('li');
+            li.innerHTML = `<a href="#" class="muted-link" data-id="${p.id}">${escapeHtml(p.title)}</a> <span class="small" style="color:var(--muted)">· ${p.score}</span>`;
+            li.querySelector('a').addEventListener('click', (e)=>{
+              e.preventDefault();
+              const roots = Array.from(document.querySelectorAll('.post'));
+              const root = roots.find(n => n.querySelector('.post-main h3')?.textContent === p.title);
+              if (root) root.scrollIntoView({behavior:'smooth', block:'center'});
+            });
+            trendingList.appendChild(li);
+          }
+        }
+
+        function id(){ return 'p_' + Math.random().toString(36).slice(2,9); }
+        function escapeHtml(s){ return String(s).replace(/[&<>"'\/]/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'})[c]; }); }
+
+        if (!load(POSTS_KEY)) save(POSTS_KEY, posts);
+
+        document.addEventListener('keydown', (e)=>{
+          if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey){
+            document.getElementById('compose-title').focus();
+          }
+        });
+
+        window.rm = { posts, votes, savePosts: ()=>save(POSTS_KEY, posts) };
       }
-
-      function flap(){ bird.vy = lift; }
-
-      canvas.onclick = () => flap();
-      document.onkeydown = (e) => { if (e.code === 'Space') { flap(); e.preventDefault(); } };
-
-      if (gInterval) clearInterval(gInterval);
-      gInterval = setInterval(update, 1000/60);
-    }
-
-    function stopGame(){
-      if (gInterval) {
-        clearInterval(gInterval);
-        gInterval = null;
-      }
-      canvas.onclick = null;
-      document.onkeydown = null;
-      // clear canvas
-      const c = canvas;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0,0,c.width,c.height);
-    }
-
-    // ---------- Utilities ----------
-    // Simple checks for url types already above
-
-    // ---------- Initialize small UI state ----------
-    hideAllComposerSubareas();
-
-    // ---------- Post feed start/stop helpers declared earlier ----------
+    })();
   </script>
 </body>
-                  </html>
+                </html>
