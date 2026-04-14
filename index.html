@@ -1,158 +1,674 @@
-<!DOCTYPE html>
+            <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pigeon | Live Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background-color: #050505; color: white; font-family: sans-serif; overflow-x: hidden; margin: 0; }
-        .hidden { display: none !important; }
-        
-        /* THE DOWN BAR */
-        nav { background: rgba(5, 5, 5, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #1a1a1a; position: fixed; bottom: 0; width: 100%; height: 75px; display: flex; justify-content: space-around; align-items: center; z-index: 5000; }
-        .plus-btn { background: white; color: black; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: translateY(-30px); border: 6px solid #050505; box-shadow: 0 10px 20px rgba(0,0,0,0.5); cursor: pointer; }
-        
-        /* SIDEBAR */
-        #sidebar { transform: translateX(-100%); transition: 0.3s ease; position: fixed; inset: 0; width: 80%; max-width: 300px; background: #111; z-index: 10000; border-right: 1px solid #222; }
-        #sidebar.open { transform: translateX(0); }
-        
-        /* MODALS */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .upload-area { background: #1a1a1a; border: 2px dashed #333; border-radius: 20px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PIGEON — Live Prompt Demo</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/a2d9f8d1f3.js" crossorigin="anonymous"></script>
+
+  <!-- Firebase (compat libraries for simpler migration) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    /* Small helpers for dashed media input box appearance */
+    .dashed-box {
+      border: 2px dashed #cbd5e1; /* slate-300 */
+      background: #f8fafc; /* slate-50 */
+    }
+    /* modal background */
+    .modal-bg { background: rgba(0,0,0,0.6); }
+  </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen font-sans">
 
-    <div id="gate" class="fixed inset-0 bg-black z-[20000] flex items-center justify-center p-6">
-        <div class="bg-white p-10 rounded-[40px] text-black text-center w-full max-w-sm">
-            <h1 class="text-6xl mb-4">🕊️</h1>
-            <h2 class="text-2xl font-black mb-2 uppercase tracking-tighter">Identity Check</h2>
-            <p class="text-gray-500 mb-8 text-sm">Open the YouTube app and Subscribe to <b>Ultra-wk8ed</b> to unlock the database.</p>
-            <button onclick="masterUnlock()" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg">OPEN YOUTUBE</button>
-            <button id="unlock-btn" onclick="showApp()" class="hidden w-full bg-green-500 text-black font-black py-4 rounded-2xl mt-4 animate-bounce">I SUBBED, ENTER</button>
+  <!-- Full-screen Lock (Sub Gate) -->
+  <div id="lockOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black text-white">
+    <div class="text-center p-6 max-w-lg">
+      <h1 class="text-4xl mb-4">Locked</h1>
+      <p class="mb-6">Click "Unlock" to open the YouTube app (or browser fallback) and proceed to sign in.</p>
+      <div class="flex gap-4 justify-center">
+        <button id="unlockBtn" class="bg-red-500 px-6 py-3 rounded-lg shadow hover:bg-red-600">
+          Unlock
+        </button>
+        <button id="forceSignInBtn" class="bg-gray-700 px-6 py-3 rounded-lg shadow hover:bg-gray-800">
+          Sign in (Force)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sign-in Overlay -->
+  <div id="signInOverlay" class="fixed inset-0 z-40 hidden items-center justify-center modal-bg">
+    <div class="bg-white rounded-xl shadow p-8 w-full max-w-md text-center">
+      <h2 class="text-2xl font-semibold mb-4">Welcome to PIGEON</h2>
+      <p class="mb-4">Sign in with Google to continue</p>
+      <button id="googleSignIn" class="flex items-center justify-center gap-3 mx-auto px-4 py-3 bg-blue-600 text-white rounded-lg">
+        <i class="fab fa-google"></i> Sign in with Google
+      </button>
+      <p class="text-sm text-slate-500 mt-4">This uses Firebase Auth (Google Provider).</p>
+    </div>
+  </div>
+
+  <!-- App Container -->
+  <div id="app" class="min-h-screen hidden">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between px-4 py-3 bg-white shadow-sm sticky top-0 z-30">
+      <div class="flex items-center gap-3">
+        <!-- Hamburger -->
+        <button id="menuBtn" class="p-2 rounded hover:bg-slate-100">
+          <i class="fas fa-bars fa-lg"></i>
+        </button>
+
+        <!-- Logo / Title -->
+        <div id="logo" class="flex items-center gap-2 cursor-pointer select-none" title="Play Flappy Pigeon">
+          <span class="text-2xl">🕊️📜🔴</span>
+          <span class="font-bold tracking-wider text-xl">PIGEON</span>
         </div>
+      </div>
+
+      <!-- Right (user info) -->
+      <div class="flex items-center gap-3">
+        <div id="userDisplay" class="flex items-center gap-2"></div>
+        <button id="signOutBtn" class="text-sm text-red-500 hidden">Sign out</button>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <div class="flex">
+      <!-- Friends Sidebar -->
+      <aside id="friendsSidebar" class="fixed left-0 top-0 h-full w-80 bg-white shadow transform -translate-x-full transition-transform z-40">
+        <div class="p-4 border-b">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Friends</h3>
+            <button id="closeFriends" class="p-1 hover:bg-slate-100 rounded"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="mt-3">
+            <input id="friendSearch" placeholder="Search..." class="w-full px-3 py-2 border rounded focus:outline-none" />
+          </div>
+        </div>
+
+        <div id="friendList" class="p-4 space-y-3 overflow-auto h-[calc(100%-120px)]">
+          <!-- dynamically filled -->
+        </div>
+      </aside>
+
+      <!-- Content -->
+      <main class="flex-1 mx-auto max-w-2xl w-full pt-6 px-4">
+        <!-- Create / Composer preview area -->
+        <div id="composerArea" class="mb-4">
+          <div id="activeComposer" class="bg-white p-4 rounded shadow dashed-box">
+            <div id="composerInner" class="space-y-3">
+              <textarea id="composerText" rows="3" placeholder="What's happening?" class="w-full p-3 border rounded"></textarea>
+
+              <div id="mediaInputArea" class="hidden">
+                <label class="block text-sm font-medium">Media URL</label>
+                <input id="mediaUrl" placeholder="https://..." class="w-full p-2 border rounded" />
+              </div>
+
+              <div id="pollArea" class="hidden space-y-2">
+                <label class="block text-sm font-medium">Create a poll (2 options)</label>
+                <input id="pollOpt1" placeholder="Option 1" class="w-full p-2 border rounded" />
+                <input id="pollOpt2" placeholder="Option 2" class="w-full p-2 border rounded" />
+              </div>
+
+              <div class="flex justify-end gap-3">
+                <button id="postBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Post</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feed -->
+        <div id="feed" class="space-y-4">
+          <!-- posts inserted here -->
+        </div>
+      </main>
     </div>
 
-    <div id="mainApp" class="hidden min-h-screen">
-        <header class="p-4 flex items-center gap-4 border-b border-gray-900 sticky top-0 bg-black/80 backdrop-blur-md z-50">
-            <i class="fa-solid fa-bars-staggered text-xl cursor-pointer" onclick="toggleSidebar()"></i>
-            <div class="flex items-center gap-2 cursor-pointer" onclick="startGame()">
-                <span class="text-2xl">🕊️<span class="text-[10px] absolute -mt-1">📜</span></span>
-                <span class="font-black italic text-xl">PIGEON</span>
-            </div>
-        </header>
+    <!-- Fixed Bottom Bar -->
+    <div class="fixed bottom-4 left-0 right-0 flex justify-center z-50 pointer-events-none">
+      <div class="relative pointer-events-auto">
+        <!-- Floating white circle + button -->
+        <button id="createBtn" class="w-16 h-16 bg-white rounded-full shadow flex items-center justify-center text-2xl">
+          <i class="fas fa-plus"></i>
+        </button>
 
-        <main id="feed" class="max-w-xl mx-auto px-4 pt-6 pb-32 space-y-4">
-            </main>
-
-        <nav>
-            <i class="fa-solid fa-house text-xl text-white"></i>
-            <div class="plus-btn" onclick="openMenu()"><i class="fa-solid fa-plus text-2xl"></i></div>
-            <i class="fa-solid fa-user text-xl text-gray-500"></i>
-        </nav>
-    </div>
-
-    <aside id="sidebar">
-        <div class="p-6">
-            <h2 class="text-xs font-black text-gray-500 uppercase tracking-widest mb-6">Friends Tag</h2>
-            <input type="text" placeholder="Search accounts..." class="w-full bg-[#1a1a1a] p-3 rounded-xl mb-6 outline-none text-sm">
-            <div class="flex items-center gap-4 p-2">
-                <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center font-bold">U</div>
-                <span class="font-bold">Ultra-wk8ed</span>
-            </div>
+        <!-- + Menu -->
+        <div id="plusMenu" class="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-3 opacity-0 scale-75 transform transition-all">
+          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="image" title="Image"><i class="far fa-image fa-lg"></i></button>
+          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="video" title="Video"><i class="fas fa-video fa-lg"></i></button>
+          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="poll" title="Poll"><i class="fas fa-poll fa-lg"></i></button>
+          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="voice" title="Voice"><i class="fas fa-microphone fa-lg"></i></button>
+          <button class="createOpt bg-white p-3 rounded-full shadow dashed-box" data-type="text" title="Text"><i class="fas fa-font fa-lg"></i></button>
         </div>
-    </aside>
-
-    <div id="createMenu" class="modal" onclick="closeAll()">
-        <div class="bg-[#111] w-full max-w-sm p-6 rounded-[35px] border border-gray-800" onclick="event.stopPropagation()">
-            <div class="grid grid-cols-1 gap-3">
-                <button onclick="openEditor('image')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-image text-green-500"></i> Image</button>
-                <button onclick="openEditor('video')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-play text-blue-500"></i> Video</button>
-                <button onclick="openEditor('poll')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-square-poll-vertical text-yellow-500"></i> Voting Poll</button>
-                <button onclick="openEditor('voice')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-microphone text-red-500"></i> Voice</button>
-                <button onclick="openEditor('text')" class="bg-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4"><i class="fa-solid fa-pen"></i> Text</button>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="editor" class="modal" onclick="closeAll()">
-        <div class="bg-[#111] w-full max-w-lg p-6 rounded-[35px] border border-gray-800" onclick="event.stopPropagation()">
-            <div id="uploadBox" class="upload-area mb-4" onclick="setLink()">
-                <i class="fa-solid fa-plus text-2xl text-gray-600"></i>
-                <p class="text-[10px] text-gray-500 font-black uppercase">Add Media URL</p>
-            </div>
-            <textarea id="postContent" placeholder="Write message..." class="w-full bg-transparent text-xl outline-none h-32 resize-none mb-4"></textarea>
-            <input type="hidden" id="tempUrl">
-            <button onclick="savePost()" class="w-full bg-green-500 text-black font-black py-4 rounded-2xl uppercase">Post Live</button>
+  <!-- DM Mockup Modal -->
+  <div id="dmModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-bg">
+    <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow">
+      <div class="p-4 border-b flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">A</div>
+          <div>
+            <div id="dmName" class="font-semibold">Alice</div>
+            <div class="text-xs text-slate-500">Online</div>
+          </div>
         </div>
+        <div class="flex items-center gap-3">
+          <button title="Voice call" class="p-2 hover:bg-slate-100 rounded"><i class="fas fa-phone"></i></button>
+          <button title="Video call" class="p-2 hover:bg-slate-100 rounded"><i class="fas fa-video"></i></button>
+          <button id="dmClose" class="p-2 hover:bg-slate-100 rounded"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="p-4 h-64 overflow-auto" id="dmMessages">
+        <div class="text-sm text-slate-600">This is a DM mockup. Messages are not persisted.</div>
+      </div>
+      <div class="p-4 border-t flex gap-2">
+        <input id="dmInput" class="flex-1 p-2 border rounded" placeholder="Message..." />
+        <button id="dmSend" class="bg-blue-600 text-white px-3 rounded">Send</button>
+      </div>
     </div>
+  </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  <!-- Flappy Pigeon Modal -->
+  <div id="gameModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-bg">
+    <div class="bg-white rounded-xl overflow-hidden shadow p-4">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-lg font-semibold">Flappy Pigeon</h3>
+        <div>
+          <button id="resetGame" class="px-3 py-1 bg-slate-100 rounded mr-2">Reset</button>
+          <button id="closeGame" class="px-3 py-1 bg-red-500 text-white rounded">Close</button>
+        </div>
+      </div>
+      <canvas id="gameCanvas" width="600" height="400" class="border"></canvas>
+      <p class="text-sm text-slate-500 mt-2">Press SPACE or click to flap.</p>
+    </div>
+  </div>
 
-        // 🔥 PASTE YOUR FIREBASE CONFIG HERE TO MAKE IT WORK ON GITHUB 🔥
-        const firebaseConfig = {
-            apiKey: "PASTE_HERE",
-            authDomain: "PASTE_HERE",
-            projectId: "PASTE_HERE",
-            storageBucket: "PASTE_HERE",
-            messagingSenderId: "PASTE_HERE",
-            appId: "PASTE_HERE"
-        };
+  <script>
+    // ======= FIREBASE CONFIG - REPLACE WITH YOURS =======
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      // ...other config...
+    };
+    // ==================================================
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const postsRef = collection(db, "posts");
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-        // LOAD POSTS IN REAL TIME
-        const q = query(postsRef, orderBy("timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const div = document.createElement('div');
-                div.className = "bg-[#0f0f0f] border border-gray-900 p-5 rounded-[2rem]";
-                let media = data.url ? `<img src="${data.url}" class="w-full rounded-2xl mb-3">` : "";
-                if(data.type === 'video') media = `<video src="${data.url}" controls class="w-full rounded-2xl mb-3"></video>`;
-                div.innerHTML = `${media}<p class="text-lg">${data.text}</p>`;
-                feed.appendChild(div);
-            });
+    // ---------- Elements ----------
+    const lockOverlay = document.getElementById('lockOverlay');
+    const signInOverlay = document.getElementById('signInOverlay');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const forceSignInBtn = document.getElementById('forceSignInBtn');
+    const googleSignIn = document.getElementById('googleSignIn');
+    const appEl = document.getElementById('app');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userDisplay = document.getElementById('userDisplay');
+
+    const menuBtn = document.getElementById('menuBtn');
+    const friendsSidebar = document.getElementById('friendsSidebar');
+    const closeFriends = document.getElementById('closeFriends');
+    const friendList = document.getElementById('friendList');
+    const friendSearch = document.getElementById('friendSearch');
+
+    const createBtn = document.getElementById('createBtn');
+    const plusMenu = document.getElementById('plusMenu');
+    const createOpts = document.querySelectorAll('.createOpt');
+
+    const mediaInputArea = document.getElementById('mediaInputArea');
+    const pollArea = document.getElementById('pollArea');
+    const composerText = document.getElementById('composerText');
+    const mediaUrl = document.getElementById('mediaUrl');
+    const pollOpt1 = document.getElementById('pollOpt1');
+    const pollOpt2 = document.getElementById('pollOpt2');
+    const postBtn = document.getElementById('postBtn');
+
+    const feedEl = document.getElementById('feed');
+
+    const dmModal = document.getElementById('dmModal');
+    const dmClose = document.getElementById('dmClose');
+    const dmMessages = document.getElementById('dmMessages');
+    const dmInput = document.getElementById('dmInput');
+    const dmSend = document.getElementById('dmSend');
+    const dmName = document.getElementById('dmName');
+
+    const logo = document.getElementById('logo');
+    const gameModal = document.getElementById('gameModal');
+    const closeGame = document.getElementById('closeGame');
+    const resetGame = document.getElementById('resetGame');
+    const canvas = document.getElementById('gameCanvas');
+
+    // ---------- Flow: Unlock -> Sign-in -> App ----------
+    function tryOpenYouTube() {
+      // Try to open YouTube app via URL scheme; fallback to youtube.com
+      const appUrl = 'vnd.youtube://';
+      const webFallback = 'https://www.youtube.com';
+      // Attempt
+      window.location = appUrl;
+      // Fallback after 800ms
+      setTimeout(() => window.open(webFallback, '_blank'), 800);
+    }
+
+    unlockBtn.addEventListener('click', () => {
+      tryOpenYouTube();
+      // Hide lock, show sign-in overlay
+      lockOverlay.classList.add('hidden');
+      signInOverlay.classList.remove('hidden');
+    });
+
+    forceSignInBtn.addEventListener('click', () => {
+      lockOverlay.classList.add('hidden');
+      signInOverlay.classList.remove('hidden');
+    });
+
+    googleSignIn.addEventListener('click', () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => alert('Sign-in error: ' + err.message));
+    });
+
+    signOutBtn.addEventListener('click', () => {
+      auth.signOut();
+    });
+
+    // ---------- Auth state handling ----------
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // show app
+        signInOverlay.classList.add('hidden');
+        appEl.classList.remove('hidden');
+        signOutBtn.classList.remove('hidden');
+        userDisplay.innerHTML = `
+          <img src="${user.photoURL || ''}" alt="" class="w-8 h-8 rounded-full object-cover"/>
+          <div class="text-sm">
+            <div class="font-medium">${user.displayName || user.email}</div>
+            <div class="text-xs text-slate-500">${user.email}</div>
+          </div>
+        `;
+        startListeningPosts();
+      } else {
+        // show sign-in
+        appEl.classList.add('hidden');
+        signInOverlay.classList.remove('hidden');
+        signOutBtn.classList.add('hidden');
+        userDisplay.innerHTML = '';
+        unsubscribePosts();
+      }
+    });
+
+    // ---------- Friends Sidebar ----------
+    const mockFriends = [
+      {name: 'Alice', id: 'alice'},
+      {name: 'Bob', id: 'bob'},
+      {name: 'Carol', id: 'carol'},
+      {name: 'Dave', id: 'dave'},
+      {name: 'Eve', id: 'eve'},
+    ];
+    function renderFriends(list) {
+      friendList.innerHTML = '';
+      list.forEach(f => {
+        const btn = document.createElement('div');
+        btn.className = 'flex items-center gap-3 p-2 rounded hover:bg-slate-50 cursor-pointer';
+        btn.innerHTML = `
+          <div class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">${f.name[0]}</div>
+          <div>
+            <div class="font-medium">${f.name}</div>
+            <div class="text-xs text-slate-500">@${f.id}</div>
+          </div>
+        `;
+        btn.addEventListener('click', () => openDM(f));
+        friendList.appendChild(btn);
+      });
+    }
+    renderFriends(mockFriends);
+
+    menuBtn.addEventListener('click', () => {
+      friendsSidebar.classList.remove('-translate-x-full');
+    });
+    closeFriends.addEventListener('click', () => {
+      friendsSidebar.classList.add('-translate-x-full');
+    });
+    friendSearch.addEventListener('input', () => {
+      const q = friendSearch.value.toLowerCase();
+      renderFriends(mockFriends.filter(f => f.name.toLowerCase().includes(q) || f.id.includes(q)));
+    });
+
+    // ---------- DM Mockup ----------
+    function openDM(friend) {
+      dmModal.classList.remove('hidden');
+      dmName.textContent = friend.name;
+      dmMessages.innerHTML = `<div class="text-sm text-slate-600">Chat with ${friend.name} (mockup).</div>`;
+    }
+    dmClose.addEventListener('click', () => dmModal.classList.add('hidden'));
+    dmSend.addEventListener('click', () => {
+      if (!dmInput.value) return;
+      const m = document.createElement('div');
+      m.className = 'text-right my-2';
+      m.innerHTML = `<span class="inline-block bg-blue-600 text-white px-3 py-2 rounded">${dmInput.value}</span>`;
+      dmMessages.appendChild(m);
+      dmInput.value = '';
+      dmMessages.scrollTop = dmMessages.scrollHeight;
+    });
+
+    // ---------- Creation Bottom Bar ----------
+    let plusOpen = false;
+    createBtn.addEventListener('click', () => {
+      plusOpen = !plusOpen;
+      plusMenu.style.opacity = plusOpen ? '1' : '0';
+      plusMenu.style.transform = plusOpen ? 'translateX(-50%) scale(1)' : 'translateX(-50%) scale(.75)';
+      if (!plusOpen) {
+        // reset composer UI
+        hideAllComposerSubareas();
+      }
+    });
+
+    function hideAllComposerSubareas() {
+      mediaInputArea.classList.add('hidden');
+      pollArea.classList.add('hidden');
+      composerText.placeholder = "What's happening?";
+    }
+
+    let currentCreateType = 'text';
+    createOpts.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.type;
+        currentCreateType = type;
+        // open composer area accordingly
+        hideAllComposerSubareas();
+        if (type === 'image' || type === 'video' || type === 'voice') {
+          mediaInputArea.classList.remove('hidden');
+        } else if (type === 'poll') {
+          pollArea.classList.remove('hidden');
+        } else if (type === 'text') {
+          // nothing else
+        }
+        // expand dashed composer visually
+        document.getElementById('activeComposer').classList.add('p-6');
+      });
+    });
+
+    // ---------- Posting to Firestore ----------
+    function makePostObject(user, type, text, media) {
+      return {
+        uid: user.uid,
+        displayName: user.displayName || user.email,
+        text: text || '',
+        mediaUrl: media || '',
+        type: type || 'text',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    }
+
+    postBtn.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) return alert('Please sign in.');
+
+      let text = composerText.value.trim();
+      let media = mediaUrl.value.trim();
+
+      if (currentCreateType === 'poll') {
+        const o1 = pollOpt1.value.trim();
+        const o2 = pollOpt2.value.trim();
+        if (!o1 || !o2) return alert('Provide 2 poll options.');
+        // Save poll as text: store JSON in text field for demo
+        const pollData = {option1: o1, option2: o2, votes: {option1:0, option2:0}};
+        await db.collection('posts').add({...makePostObject(user, 'poll', JSON.stringify(pollData), '')});
+        composerText.value = '';
+        pollOpt1.value = '';
+        pollOpt2.value = '';
+        return;
+      }
+
+      // If image/video/voice require media
+      if (['image','video','voice'].includes(currentCreateType)) {
+        if (!media) return alert('Provide a media URL.');
+      }
+
+      // Validate minimum content
+      if (!text && !media) return alert('Add text or media to post.');
+
+      await db.collection('posts').add(makePostObject(user, currentCreateType, text, media));
+      // Clear
+      composerText.value = '';
+      mediaUrl.value = '';
+      pollOpt1.value = '';
+      pollOpt2.value = '';
+      hideAllComposerSubareas();
+      plusMenu.style.opacity = '0';
+      plusMenu.style.transform = 'translateX(-50%) scale(.75)';
+      plusOpen = false;
+    });
+
+    // ---------- Live Feed using onSnapshot ----------
+    let unsubscribe = null;
+    function startListeningPosts() {
+      if (unsubscribe) return;
+      unsubscribe = db.collection('posts').orderBy('timestamp', 'desc')
+        .onSnapshot(snapshot => {
+          feedEl.innerHTML = '';
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const time = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
+            const p = document.createElement('div');
+            p.className = 'bg-white p-4 rounded shadow';
+            p.innerHTML = `
+              <div class="flex items-start gap-3">
+                <div class="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center">${(data.displayName||'U')[0]}</div>
+                <div class="flex-1">
+                  <div class="flex justify-between">
+                    <div>
+                      <div class="font-semibold">${escapeHtml(data.displayName)}</div>
+                      <div class="text-xs text-slate-500">${time.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div class="mt-3 text-slate-700 whitespace-pre-wrap">${renderPostContent(data)}</div>
+                </div>
+              </div>
+            `;
+            feedEl.appendChild(p);
+          });
+        }, err => {
+          console.error('Snapshot error', err);
         });
+    }
 
-        // SAVE POST FUNCTION
-        window.savePost = async () => {
-            const text = document.getElementById('postContent').value;
-            const url = document.getElementById('tempUrl').value;
-            if(!text && !url) return;
-            await addDoc(postsRef, { text, url, type: window.currentMode, timestamp: Date.now() });
-            window.closeAll();
-            document.getElementById('postContent').value = "";
-            document.getElementById('tempUrl').value = "";
-        };
-    </script>
+    function unsubscribePosts() {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    }
 
-    <script>
-        function masterUnlock() {
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if(isMobile) window.location.href = `vnd.youtube://www.youtube.com/@Ultra-wk8ed`;
-            else window.open(`https://www.youtube.com/@Ultra-wk8ed?sub_confirmation=1`, '_blank');
-            document.getElementById('unlock-btn').classList.remove('hidden');
+    function renderPostContent(data) {
+      const t = escapeHtml(data.text || '');
+      const media = data.mediaUrl || '';
+      const type = data.type || 'text';
+      // Poll detection
+      if (type === 'poll') {
+        try {
+          const poll = JSON.parse(data.text);
+          return `
+            <div class="p-3 rounded border">
+              <div class="font-medium mb-2">Poll</div>
+              <div class="space-y-2">
+                <button class="w-full text-left p-2 bg-slate-100 rounded">${escapeHtml(poll.option1)} <span class="float-right text-sm">${poll.votes?.option1||0}</span></button>
+                <button class="w-full text-left p-2 bg-slate-100 rounded">${escapeHtml(poll.option2)} <span class="float-right text-sm">${poll.votes?.option2||0}</span></button>
+              </div>
+            </div>
+          `;
+        } catch(e) {
+          return t;
         }
-        function showApp() { document.getElementById('gate').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-        function openMenu() { document.getElementById('createMenu').style.display = 'flex'; }
-        function openEditor(mode) { 
-            window.currentMode = mode; 
-            document.getElementById('createMenu').style.display = 'none'; 
-            document.getElementById('editor').style.display = 'flex';
-            document.getElementById('uploadBox').className = (mode === 'text' || mode === 'poll') ? 'hidden' : 'upload-area mb-4';
+      }
+
+      let mediaHtml = '';
+      if (media) {
+        if (isImageUrl(media)) mediaHtml = `<img src="${media}" class="mt-3 rounded max-h-64 w-auto"/>`;
+        else if (isYouTubeUrl(media)) mediaHtml = `<div class="mt-3"><iframe class="w-full h-56 rounded" src="${toEmbedYouTube(media)}" frameborder="0" allowfullscreen></iframe></div>`;
+        else if (isAudioUrl(media)) mediaHtml = `<audio class="mt-3" controls src="${media}"></audio>`;
+        else mediaHtml = `<a href="${media}" target="_blank" class="mt-3 text-blue-600 inline-block">${escapeHtml(media)}</a>`;
+      }
+      return `<div>${t}</div>${mediaHtml}`;
+    }
+
+    function isImageUrl(url) {
+      return /\.(jpeg|jpg|gif|png|webp|svg)$/i.test(url);
+    }
+    function isAudioUrl(url) {
+      return /\.(mp3|wav|ogg)$/i.test(url);
+    }
+    function isYouTubeUrl(url) {
+      return /youtube\.com|youtu\.be/.test(url);
+    }
+    function toEmbedYouTube(url) {
+      // convert to embed src
+      let id = '';
+      const m = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+      if (m) id = m[1];
+      else {
+        const short = url.match(/youtu\.be\/([0-9A-Za-z_-]{11})/);
+        if (short) id = short[1];
+      }
+      return id ? `https://www.youtube.com/embed/${id}` : url;
+    }
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
+    }
+
+    // ---------- DM interactions already handled above ----------
+
+    // ---------- Logo -> Flappy Pigeon Game ----------
+    logo.addEventListener('click', () => {
+      gameModal.classList.remove('hidden');
+      startGame();
+    });
+    closeGame.addEventListener('click', () => {
+      stopGame();
+      gameModal.classList.add('hidden');
+    });
+    resetGame.addEventListener('click', () => {
+      stopGame();
+      startGame();
+    });
+
+    // Simple Flappy Pigeon implementation
+    let gInterval = null;
+    let ctx, W, H;
+    function startGame(){
+      const c = canvas;
+      ctx = c.getContext('2d');
+      W = c.width; H = c.height;
+      let bird = {x:80, y:H/2, vy:0, r:14};
+      let gravity = 0.6, lift = -10;
+      let pipes = [];
+      let frame = 0;
+      let score = 0;
+      let running = true;
+
+      function spawnPipe(){
+        const gap = 110;
+        const top = Math.random()*(H - gap - 80) + 20;
+        pipes.push({x:W, top: top, gap: gap});
+      }
+
+      function update(){
+        frame++;
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(0,0,W,H);
+        // bird
+        bird.vy += gravity;
+        bird.y += bird.vy;
+        if (bird.y + bird.r > H) { bird.y = H - bird.r; bird.vy = 0; running = false; }
+        if (bird.y - bird.r < 0) { bird.y = bird.r; bird.vy = 0; }
+
+        // spawn
+        if (frame % 90 === 0) spawnPipe();
+
+        // pipes
+        for (let i = pipes.length-1; i>=0; i--){
+          const p = pipes[i];
+          p.x -= 2.2;
+          // draw
+          ctx.fillStyle = '#228B22';
+          ctx.fillRect(p.x, 0, 48, p.top);
+          ctx.fillRect(p.x, p.top + p.gap, 48, H - (p.top + p.gap));
+          // collision check
+          if (bird.x + bird.r > p.x && bird.x - bird.r < p.x + 48) {
+            if (bird.y - bird.r < p.top || bird.y + bird.r > p.top + p.gap) {
+              running = false;
+            }
+          }
+          if (p.x + 48 < bird.x && !p.passed) { score++; p.passed = true; }
+          if (p.x + 48 < 0) pipes.splice(i,1);
         }
-        function closeAll() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
-        function setLink() { const url = prompt("Enter URL:"); if(url) document.getElementById('tempUrl').value = url; }
-    </script>
+
+        // draw bird
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.fillRect(bird.x + 6, bird.y - 5, 8, 4); // beak
+
+        // score
+        ctx.fillStyle = '#000';
+        ctx.font = '18px sans-serif';
+        ctx.fillText('Score: ' + score, 10, 25);
+
+        if (!running) {
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.fillRect(0,0,W,H);
+          ctx.fillStyle = '#fff';
+          ctx.font = '28px sans-serif';
+          ctx.fillText('Game Over - Score: ' + score, 60, H/2);
+          clearInterval(gInterval);
+          gInterval = null;
+        }
+      }
+
+      function flap(){ bird.vy = lift; }
+
+      canvas.onclick = () => flap();
+      document.onkeydown = (e) => { if (e.code === 'Space') { flap(); e.preventDefault(); } };
+
+      if (gInterval) clearInterval(gInterval);
+      gInterval = setInterval(update, 1000/60);
+    }
+
+    function stopGame(){
+      if (gInterval) {
+        clearInterval(gInterval);
+        gInterval = null;
+      }
+      canvas.onclick = null;
+      document.onkeydown = null;
+      // clear canvas
+      const c = canvas;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+    }
+
+    // ---------- Utilities ----------
+    // Simple checks for url types already above
+
+    // ---------- Initialize small UI state ----------
+    hideAllComposerSubareas();
+
+    // ---------- Post feed start/stop helpers declared earlier ----------
+  </script>
 </body>
-</html>
+                  </html>
