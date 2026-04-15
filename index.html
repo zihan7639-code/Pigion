@@ -3,64 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pigeon Ultra</title>
+    <title>Pigeon Ultra | Master Build</title>
     <style>
         :root { --yt-black: #0f0f0f; --yt-border: #272727; --pigeon: #1DA1F2; --text: #ffffff; }
         * { box-sizing: border-box; font-family: "Roboto", sans-serif; }
         body { margin: 0; background: var(--yt-black); color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* --- HEADER --- */
-        header { 
-            height: 56px; display: flex; align-items: center; justify-content: space-between; 
-            padding: 0 16px; position: fixed; top: 0; width: 100%; background: var(--yt-black); z-index: 1000; 
-        }
-        .logo-trigger { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
-        .logo-trigger:active { transform: scale(0.95); }
+        /* --- SCREENS & GATES --- */
+        .gate { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .input-f { padding: 12px; width: 280px; border-radius: 8px; border: none; margin-bottom: 10px; font-size: 16px; outline: none; }
+        .btn-main { padding: 12px 40px; border-radius: 25px; background: var(--pigeon); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; width: 280px; }
 
-        /* --- YOUTUBE DOWN BAR (PIXEL PERFECT) --- */
-        nav { 
-            height: 50px; border-top: 1px solid var(--yt-border); display: flex; 
-            justify-content: space-around; align-items: center; position: fixed; 
-            bottom: 0; width: 100%; background: var(--yt-black); z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .nav-item { 
-            background: none; border: none; color: white; display: flex; 
-            flex-direction: column; align-items: center; font-size: 10px; cursor: pointer; flex: 1;
-        }
+        /* --- HEADER & YOUTUBE DOWNBAR --- */
+        header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: fixed; top: 0; width: 100%; background: var(--yt-black); z-index: 1000; border-bottom: 1px solid var(--yt-border); }
+        .logo-trigger { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+        nav { height: 50px; border-top: 1px solid var(--yt-border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: var(--yt-black); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 10px; cursor: pointer; flex: 1; }
         .nav-item i { font-size: 22px; margin-bottom: 3px; font-style: normal; }
         .plus-icon { font-size: 38px !important; font-weight: 100; margin-top: -5px; }
 
-        /* --- GAME OVERLAY (EASTER EGG) --- */
-        #game-overlay { 
-            position: fixed; inset: 0; background: #70c5ce; z-index: 9999; 
-            display: none; flex-direction: column; align-items: center; justify-content: center; 
-        }
-        canvas { border: 5px solid #fff; border-radius: 15px; background: #70c5ce; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        /* --- APP VIEWS --- */
+        #app { margin: 56px 0 50px; height: calc(100vh - 106px); overflow-y: auto; }
+        .card { padding: 15px; border-bottom: 8px solid var(--yt-border); }
+        .post-media { width: 100%; border-radius: 10px; margin-top: 10px; max-height: 400px; object-fit: cover; }
+        
+        /* --- SOCIAL BUTTONS --- */
+        .soc-row { display: flex; gap: 8px; margin-bottom: 5px; align-items: center; }
+        .badge-btn { font-size: 10px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--pigeon); color: var(--pigeon); background: none; cursor: pointer; }
+        .action-bar { display: flex; gap: 20px; margin-top: 12px; }
+        .action-btn { background: none; border: none; color: #aaa; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .comment-box { margin-left: 10px; margin-top: 10px; border-left: 2px solid var(--yt-border); padding-left: 10px; font-size: 13px; }
 
         /* --- PROFILE --- */
         #you-view { display: none; padding: 20px; }
-        .channel-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
-        .avatar-main { 
-            width: 80px; height: 80px; border-radius: 50%; background: var(--pigeon); 
-            display: flex; align-items: center; justify-content: center; font-size: 35px; font-weight: bold; 
-        }
+        .channel-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .avatar-main { width: 80px; height: 80px; border-radius: 50%; background: var(--pigeon); display: flex; align-items: center; justify-content: center; font-size: 35px; font-weight: bold; }
 
-        /* --- VIEW CONTROLS --- */
-        #app { margin: 56px 0 50px; height: calc(100vh - 106px); overflow-y: auto; }
-        #studio { position: fixed; inset: 0; background: #000; z-index: 8000; display: none; padding: 20px; }
+        /* --- STUDIO --- */
+        #studio { position: fixed; inset: 0; background: var(--yt-black); z-index: 8000; display: none; padding: 20px; flex-direction: column; }
+        
+        /* --- EASTER EGG GAME --- */
+        #game-overlay { position: fixed; inset: 0; background: #70c5ce; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        canvas { border: 5px solid #fff; border-radius: 15px; background: #70c5ce; }
     </style>
 </head>
 <body>
 
-    <div id="game-overlay">
-        <h2 style="color:white; margin-bottom:10px; font-weight:900;">FLAPPY PIGEON</h2>
-        <canvas id="flappyCanvas" width="320" height="480"></canvas>
-        <p style="color:white; margin-top:10px;">Tap to Fly | Avoid Borders</p>
-        <button onclick="stopGame()" style="margin-top:15px; padding:12px 30px; border-radius:20px; border:none; background:red; color:white; font-weight:bold;">EXIT GAME</button>
+    <div id="sub-gate" class="gate">
+        <h1 style="font-size: 50px; margin:0;">🕊️</h1>
+        <h2>Pigeon Ultra</h2>
+        <button onclick="doSub()" class="btn-main" style="background:red;">1. Subscribe to Channel</button>
+        <button onclick="doVerify()" class="btn-main" style="background:#333;">2. I Have Subscribed</button>
     </div>
 
-    <div id="main-ui">
+    <div id="id-gate" class="gate" style="display:none;">
+        <h2>Create Channel</h2>
+        <input type="text" id="u-name" class="input-f" placeholder="Handle (5-10 chars)" maxlength="10">
+        <input type="password" id="u-pass" class="input-f" placeholder="Password (10+ chars)">
+        <button onclick="startApp()" class="btn-main">Enter Ultra</button>
+    </div>
+
+    <div id="game-overlay">
+        <h2 style="color:white; font-weight:900;">FLAPPY PIGEON</h2>
+        <canvas id="flappyCanvas" width="320" height="480"></canvas>
+        <button onclick="stopGame()" class="btn-main" style="background:red; width:200px;">EXIT GAME</button>
+    </div>
+
+    <div id="main-ui" style="display:none">
         <header>
             <div class="logo-trigger" onclick="launchEgg()">
                 <span style="font-size:26px;">🕊️</span>
@@ -70,23 +79,20 @@
         </header>
 
         <main id="app">
-            <div id="home-view">
-                <div style="padding:20px; color:#888; text-align:center;">Welcome to the Feed</div>
-            </div>
+            <div id="home-view"></div>
+            <div id="shorts-view" style="display:none; height:100%; background:black; overflow-y:scroll; scroll-snap-type:y mandatory;"></div>
             
-            <div id="shorts-view" style="display:none; height:100%; background:black;">
-                </div>
-
             <div id="you-view">
                 <div class="channel-header">
-                    <div class="avatar-main" id="u-initial">P</div>
+                    <div class="avatar-main" id="u-initial">U</div>
                     <div>
-                        <h2 id="u-display" style="margin:0">Pigeon User</h2>
-                        <p style="margin:0; color:#aaa;">@channel • View channel</p>
+                        <h2 id="u-display" style="margin:0">User</h2>
+                        <p style="margin:0; color:#aaa;" id="u-handle">@channel • View channel</p>
                     </div>
                 </div>
-                <hr style="border:0; border-top:1px solid var(--yt-border); margin-bottom:20px;">
-                <div id="user-posts"></div>
+                <hr style="border:0; border-top:1px solid var(--yt-border); margin-bottom:10px;">
+                <h3 style="padding-left:10px;">Your Posts</h3>
+                <div id="my-posts"></div>
             </div>
         </main>
 
@@ -94,78 +100,185 @@
             <button class="nav-item" onclick="showTab('home')"><i>🏠</i>Home</button>
             <button class="nav-item" onclick="showTab('shorts')"><i>🎬</i>Shorts</button>
             <button class="nav-item plus-icon" onclick="openStudio()">+</button>
-            <button class="nav-item"><i>📺</i>Subscriptions</button>
+            <button class="nav-item"><i>📺</i>Subs</button>
             <button class="nav-item" onclick="showTab('you')"><i>👤</i>You</button>
         </nav>
     </div>
 
     <div id="studio">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span onclick="closeStudio()" style="font-size:28px;">✕</span>
-            <button onclick="finishPost()" style="background:white; color:black; border:none; padding:8px 20px; border-radius:20px; font-weight:bold;">Post</button>
+            <span onclick="closeStudio()" style="font-size:28px; cursor:pointer;">✕</span>
+            <button onclick="postNow()" id="post-btn" style="background:white; color:black; border:none; padding:8px 20px; border-radius:20px; font-weight:bold; cursor:pointer;">Post</button>
         </div>
-        <textarea id="p-input" placeholder="What's on your mind?" style="width:100%; height:250px; background:none; border:none; color:white; font-size:20px; margin-top:30px; outline:none;"></textarea>
+        <textarea id="p-input" placeholder="What's on your mind?" style="width:100%; height:200px; background:none; border:none; color:white; font-size:20px; margin-top:30px; outline:none; resize:none;"></textarea>
+        <p id="media-status" style="color:var(--pigeon); font-size:12px;"></p>
+        <input type="file" id="media-file" hidden onchange="document.getElementById('media-status').innerText='📎 Media Attached'">
+        <button onclick="document.getElementById('media-file').click()" style="background:#272727; color:white; border:none; padding:12px; border-radius:10px; width:fit-content; cursor:pointer;">Add Image/Video</button>
     </div>
 
-    <script>
-        // --- NAVIGATION LOGIC ---
-        function showTab(t) {
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCrAjMOIh0yD9Vp6Zdp8MJ2qjip8dstdI",
+            authDomain: "pigeon-platform.firebaseapp.com",
+            projectId: "pigeon-platform",
+            storageBucket: "pigeon-platform.firebasestorage.app",
+            messagingSenderId: "322112493288",
+            appId: "1:322112493288:web:f6e5ed8e0c1abb1c469b5d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        window.uName = ""; window.uPass = ""; window.subOk = false;
+
+        // AUTH GATES
+        window.doSub = () => { window.open("https://youtube.com/@Ultra-wk8ed"); window.subOk = true; };
+        window.doVerify = () => {
+            if(!window.subOk) return alert("Please Subscribe first!");
+            document.getElementById('sub-gate').style.display='none';
+            document.getElementById('id-gate').style.display='flex';
+        };
+
+        window.startApp = () => {
+            const u = document.getElementById('u-name').value;
+            const p = document.getElementById('u-pass').value;
+            // EXACT LIMITS ENFORCED HERE
+            if(u.length < 5 || u.length > 10) return alert("Username must be 5-10 characters.");
+            if(p.length < 10) return alert("Password must be at least 10 characters.");
+            
+            window.uName = u; window.uPass = p;
+            
+            // Set Profile UI
+            document.getElementById('u-initial').innerText = u[0].toUpperCase();
+            document.getElementById('u-display').innerText = u;
+            document.getElementById('u-handle').innerText = "@" + u.toLowerCase() + " • View channel";
+
+            document.getElementById('id-gate').style.display='none';
+            document.getElementById('main-ui').style.display='block';
+            sync(); // START CLOUD SYNC
+        };
+
+        // NAVIGATION & STUDIO
+        window.showTab = (t) => {
             ['home-view', 'shorts-view', 'you-view'].forEach(id => document.getElementById(id).style.display = 'none');
             document.getElementById(t + '-view').style.display = 'block';
-        }
+        };
+        window.openStudio = () => document.getElementById('studio').style.display = 'flex';
+        window.closeStudio = () => document.getElementById('studio').style.display = 'none';
 
-        function openStudio() { document.getElementById('studio').style.display = 'block'; }
-        function closeStudio() { document.getElementById('studio').style.display = 'none'; }
+        // SOCIAL POWERS
+        window.react = async (id, type) => { await updateDoc(doc(db, "posts", id), { [type]: increment(1) }); };
+        window.socialAction = (user, type) => alert(`${type} request sent to @${user}`);
+        window.addComment = async (pid, parentId = null) => {
+            const txt = prompt(parentId ? "Reply to user:" : "Add a comment:");
+            if(txt) await addDoc(collection(db, "comments"), { pid, parentId, user: window.uName, text: txt, time: serverTimestamp() });
+        };
 
-        function finishPost() {
-            // After posting, redirect to Home
-            alert("Post Uploaded!");
-            closeStudio();
-            showTab('home');
+        // POST & AUTO-REDIRECT
+        window.postNow = async () => {
+            const btn = document.getElementById('post-btn'); 
+            const text = document.getElementById('p-input').value;
+            if(!text && !document.getElementById('media-file').files[0]) return alert("Say something!");
+            
+            btn.innerText = "⏳";
+            const file = document.getElementById('media-file').files[0];
+            let url = "", type = "";
+            if(file) {
+                const sRef = ref(storage, `uploads/${Date.now()}`);
+                await uploadBytes(sRef, file);
+                url = await getDownloadURL(sRef);
+                type = file.type.split('/')[0];
+            }
+            
+            await addDoc(collection(db, "posts"), {
+                user: window.uName, pass: window.uPass, text: text,
+                media: url, mediaType: type, likes: 0, dislikes: 0, time: serverTimestamp()
+            });
+            
+            // THE SMOOTH REDIRECT
+            btn.innerText = "Post";
             document.getElementById('p-input').value = "";
+            document.getElementById('media-status').innerText = "";
+            document.getElementById('media-file').value = "";
+            closeStudio();
+            showTab('home'); 
+        };
+
+        // FIREBASE SYNC ENGINE
+        function sync() {
+            onSnapshot(query(collection(db, "posts"), orderBy("time", "desc")), (snap) => {
+                const f = document.getElementById('home-view'); 
+                const s = document.getElementById('shorts-view');
+                const mf = document.getElementById('my-posts');
+                f.innerHTML = ""; s.innerHTML = ""; mf.innerHTML = "";
+                
+                snap.forEach(d => {
+                    const p = d.data(); const id = d.id;
+                    let mHtml = p.mediaType === 'image' ? `<img src="${p.media}" class="post-media">` : (p.mediaType === 'video' ? `<video src="${p.media}" controls class="post-media"></video>` : "");
+                    
+                    const card = `
+                        <div class="card">
+                            <div style="display:flex; gap:12px;">
+                                <div style="width:40px; height:40px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-weight:bold;">${p.user[0].toUpperCase()}</div>
+                                <div style="flex:1">
+                                    <div class="soc-row">
+                                        <b>@${p.user}</b>
+                                        <button class="badge-btn" onclick="socialAction('${p.user}', 'Follow')">Follow</button>
+                                        <button class="badge-btn" onclick="socialAction('${p.user}', 'Friend')">Friend</button>
+                                    </div>
+                                    <p style="margin:5px 0;">${p.text}</p>
+                                    ${mHtml}
+                                    <div class="action-bar">
+                                        <button class="action-btn" onclick="react('${id}', 'likes')">❤️ ${p.likes || 0}</button>
+                                        <button class="action-btn" onclick="react('${id}', 'dislikes')">👎 ${p.dislikes || 0}</button>
+                                        <button class="action-btn" onclick="addComment('${id}')">💬 Comment</button>
+                                    </div>
+                                    <div id="comments-${id}" class="comment-box"></div>
+                                </div>
+                            </div>
+                        </div>`;
+                    
+                    f.innerHTML += card;
+                    if(p.user === window.uName) mf.innerHTML += card;
+                    if(p.mediaType === 'video') {
+                        s.innerHTML += `<div style="height:100%; scroll-snap-align:start; display:flex; align-items:center;"><video src="${p.media}" loop style="width:100%;" onclick="this.paused?this.play():this.pause()"></video></div>`;
+                    }
+                    loadComments(id);
+                });
+            });
         }
 
-        // --- FLAPPY PIGEON EASTER EGG ---
+        function loadComments(pid) {
+            onSnapshot(query(collection(db, "comments"), where("pid", "==", pid), orderBy("time", "asc")), (snap) => {
+                const zone = document.getElementById(`comments-${pid}`); if(!zone) return;
+                zone.innerHTML = "";
+                snap.forEach(d => {
+                    const c = d.data();
+                    zone.innerHTML += `<div style="margin-bottom:6px;"><b>@${c.user}:</b> ${c.text} <span style="color:var(--pigeon); font-size:11px; cursor:pointer; margin-left:8px;" onclick="addComment('${pid}', '${d.id}')">Reply</span></div>`;
+                });
+            });
+        }
+
+        // --- FLAPPY PIGEON GAME ---
         const canvas = document.getElementById('flappyCanvas');
         const ctx = canvas.getContext('2d');
         let birdY, birdV, gameLoop;
 
-        function launchEgg() {
-            document.getElementById('game-overlay').style.display = 'flex';
-            birdY = 200;
-            birdV = 0;
-            gameLoop = setInterval(updateGame, 20);
-        }
-
-        function stopGame() {
-            clearInterval(gameLoop);
-            document.getElementById('game-overlay').style.display = 'none';
-        }
-
+        window.launchEgg = () => { document.getElementById('game-overlay').style.display = 'flex'; birdY = 200; birdV = 0; gameLoop = setInterval(updateGame, 20); };
+        window.stopGame = () => { clearInterval(gameLoop); document.getElementById('game-overlay').style.display = 'none'; };
         canvas.onclick = () => { birdV = -7; };
 
         function updateGame() {
-            // Background
-            ctx.fillStyle = "#70c5ce";
-            ctx.fillRect(0, 0, 320, 480);
-            
-            // Physics
-            birdV += 0.4;
-            birdY += birdV;
-
-            // Draw Pigeon
-            ctx.font = "35px Arial";
-            ctx.fillText("🕊️", 50, birdY);
-
-            // Floor/Ceiling collision
-            if(birdY > 480 || birdY < 0) {
-                alert("Game Over!");
-                stopGame();
-            }
+            ctx.fillStyle = "#70c5ce"; ctx.fillRect(0, 0, 320, 480);
+            birdV += 0.4; birdY += birdV;
+            ctx.font = "35px Arial"; ctx.fillText("🕊️", 50, birdY);
+            if(birdY > 480 || birdY < 0) { alert("Game Over!"); stopGame(); }
         }
-
-        // Initialize with Home tab
-        showTab('home');
     </script>
 </body>
 </html>
