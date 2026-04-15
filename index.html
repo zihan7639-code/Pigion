@@ -3,282 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pigeon Ultra | Master Build</title>
+    <title>Pigeon Ultra | Final Master</title>
     <style>
-        :root { --yt-black: #0f0f0f; --yt-border: #272727; --pigeon: #1DA1F2; --text: #ffffff; }
-        * { box-sizing: border-box; font-family: "Roboto", sans-serif; }
+        :root { --yt-black: #0f0f0f; --yt-border: #272727; --pigeon: #1DA1F2; --text: #ffffff; --gray: #aaaaaa; }
+        * { box-sizing: border-box; font-family: "Roboto", sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: var(--yt-black); color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* --- SCREENS & GATES --- */
+        /* --- AUTH GATE --- */
         .gate { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-        .input-f { padding: 12px; width: 280px; border-radius: 8px; border: none; margin-bottom: 10px; font-size: 16px; outline: none; }
-        .btn-main { padding: 12px 40px; border-radius: 25px; background: var(--pigeon); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; width: 280px; }
+        .input-f { padding: 14px; width: 280px; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff; margin-bottom: 12px; outline: none; }
+        .btn-p { padding: 14px 40px; border-radius: 30px; background: var(--pigeon); color: white; border: none; font-weight: bold; cursor: pointer; width: 280px; }
 
-        /* --- HEADER & YOUTUBE DOWNBAR --- */
+        /* --- HEADER & NAV --- */
         header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: fixed; top: 0; width: 100%; background: var(--yt-black); z-index: 1000; border-bottom: 1px solid var(--yt-border); }
-        .logo-trigger { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
-        nav { height: 50px; border-top: 1px solid var(--yt-border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: var(--yt-black); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 10px; cursor: pointer; flex: 1; }
-        .nav-item i { font-size: 22px; margin-bottom: 3px; font-style: normal; }
-        .plus-icon { font-size: 38px !important; font-weight: 100; margin-top: -5px; }
+        nav { height: 50px; border-top: 1px solid var(--yt-border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: var(--yt-black); z-index: 1000; }
+        .nav-item { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 10px; flex: 1; }
+        .plus-btn { font-size: 40px !important; margin-top: -5px; }
 
-        /* --- APP VIEWS --- */
-        #app { margin: 56px 0 50px; height: calc(100vh - 106px); overflow-y: auto; }
-        .card { padding: 15px; border-bottom: 8px solid var(--yt-border); }
-        .post-media { width: 100%; border-radius: 10px; margin-top: 10px; max-height: 400px; object-fit: cover; }
+        /* --- FEED & CARDS --- */
+        #app { margin-top: 56px; margin-bottom: 50px; height: calc(100vh - 106px); overflow-y: auto; }
+        .card { padding: 15px; border-bottom: 8px solid var(--yt-border); position: relative; }
+        .media-box { width: 100%; border-radius: 12px; margin-top: 10px; background: #1a1a1a; overflow: hidden; }
         
-        /* --- SOCIAL BUTTONS --- */
-        .soc-row { display: flex; gap: 8px; margin-bottom: 5px; align-items: center; }
-        .badge-btn { font-size: 10px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--pigeon); color: var(--pigeon); background: none; cursor: pointer; }
-        .action-bar { display: flex; gap: 20px; margin-top: 12px; }
-        .action-btn { background: none; border: none; color: #aaa; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .comment-box { margin-left: 10px; margin-top: 10px; border-left: 2px solid var(--yt-border); padding-left: 10px; font-size: 13px; }
+        /* --- POLLS --- */
+        .poll-opt { background: #222; padding: 12px; border-radius: 8px; margin-top: 6px; border: 1px solid #333; position: relative; overflow: hidden; }
+        .poll-fill { position: absolute; left: 0; top: 0; height: 100%; background: rgba(29, 161, 242, 0.2); width: 0%; transition: 0.5s; }
 
-        /* --- PROFILE --- */
-        #you-view { display: none; padding: 20px; }
-        .channel-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .avatar-main { width: 80px; height: 80px; border-radius: 50%; background: var(--pigeon); display: flex; align-items: center; justify-content: center; font-size: 35px; font-weight: bold; }
+        /* --- STUDIO & TOOLS --- */
+        #studio { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; padding: 20px; }
+        .tools { display: flex; gap: 15px; margin-top: 20px; border-top: 1px solid #222; padding-top: 15px; }
+        .tool { background: #1a1a1a; border: none; color: white; padding: 12px; border-radius: 10px; font-size: 20px; }
 
-        /* --- STUDIO --- */
-        #studio { position: fixed; inset: 0; background: var(--yt-black); z-index: 8000; display: none; padding: 20px; flex-direction: column; }
-        
-        /* --- EASTER EGG GAME --- */
-        #game-overlay { position: fixed; inset: 0; background: #70c5ce; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        canvas { border: 5px solid #fff; border-radius: 15px; background: #70c5ce; }
+        /* --- GAME --- */
+        #game-overlay { position: fixed; inset: 0; background: #70c5ce; z-index: 11000; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div id="sub-gate" class="gate">
-        <h1 style="font-size: 50px; margin:0;">🕊️</h1>
-        <h2>Pigeon Ultra</h2>
-        <button onclick="doSub()" class="btn-main" style="background:red;">1. Subscribe to Channel</button>
-        <button onclick="doVerify()" class="btn-main" style="background:#333;">2. I Have Subscribed</button>
-    </div>
-
-    <div id="id-gate" class="gate" style="display:none;">
-        <h2>Create Channel</h2>
+    <div id="id-gate" class="gate">
+        <h1 style="color:var(--pigeon); font-size: 50px; margin:0;">🕊️</h1>
+        <h2 style="margin-bottom:20px;">Pigeon Ultra</h2>
         <input type="text" id="u-name" class="input-f" placeholder="Handle (5-10 chars)" maxlength="10">
         <input type="password" id="u-pass" class="input-f" placeholder="Password (10+ chars)">
-        <button onclick="startApp()" class="btn-main">Enter Ultra</button>
+        <button onclick="entry()" class="btn-p">Start Session</button>
     </div>
 
     <div id="game-overlay">
-        <h2 style="color:white; font-weight:900;">FLAPPY PIGEON</h2>
-        <canvas id="flappyCanvas" width="320" height="480"></canvas>
-        <button onclick="stopGame()" class="btn-main" style="background:red; width:200px;">EXIT GAME</button>
+        <canvas id="flappy" width="320" height="480" style="border:5px solid #fff; border-radius:15px;"></canvas>
+        <button onclick="stopGame()" style="margin-top:20px; background:red; color:white; border:none; padding:10px 30px; border-radius:20px; font-weight:bold;">CLOSE GAME</button>
     </div>
 
     <div id="main-ui" style="display:none">
         <header>
-            <div class="logo-trigger" onclick="launchEgg()">
-                <span style="font-size:26px;">🕊️</span>
-                <span style="font-weight:900; font-size:20px; letter-spacing:-1px;">Pigeon</span>
+            <div onclick="launchGame()" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <span style="font-size:24px;">🕊️</span>
+                <span style="font-weight:900; font-size:20px;">Pigeon</span>
             </div>
-            <div style="display:flex; gap:20px; font-size:20px;">🔔 🔍</div>
+            <div style="font-size:20px;">🔍 🔔</div>
         </header>
 
         <main id="app">
-            <div id="home-view"></div>
-            <div id="shorts-view" style="display:none; height:100%; background:black; overflow-y:scroll; scroll-snap-type:y mandatory;"></div>
-            
-            <div id="you-view">
-                <div class="channel-header">
-                    <div class="avatar-main" id="u-initial">U</div>
-                    <div>
-                        <h2 id="u-display" style="margin:0">User</h2>
-                        <p style="margin:0; color:#aaa;" id="u-handle">@channel • View channel</p>
-                    </div>
-                </div>
-                <hr style="border:0; border-top:1px solid var(--yt-border); margin-bottom:10px;">
-                <h3 style="padding-left:10px;">Your Posts</h3>
-                <div id="my-posts"></div>
-            </div>
+            <div id="feed"></div>
         </main>
 
         <nav>
-            <button class="nav-item" onclick="showTab('home')"><i>🏠</i>Home</button>
-            <button class="nav-item" onclick="showTab('shorts')"><i>🎬</i>Shorts</button>
-            <button class="nav-item plus-icon" onclick="openStudio()">+</button>
+            <button class="nav-item" onclick="tab('home')"><i>🏠</i>Home</button>
+            <button class="nav-item" onclick="tab('shorts')"><i>🎬</i>Shorts</button>
+            <button class="nav-item plus-btn" onclick="openStudio()">+</button>
             <button class="nav-item"><i>📺</i>Subs</button>
-            <button class="nav-item" onclick="showTab('you')"><i>👤</i>You</button>
+            <button class="nav-item" onclick="tab('you')"><i>👤</i>You</button>
         </nav>
     </div>
 
     <div id="studio">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span onclick="closeStudio()" style="font-size:28px; cursor:pointer;">✕</span>
-            <button onclick="postNow()" id="post-btn" style="background:white; color:black; border:none; padding:8px 20px; border-radius:20px; font-weight:bold; cursor:pointer;">Post</button>
+            <span onclick="closeStudio()" style="font-size:28px;">✕</span>
+            <button onclick="postNow()" style="background:white; color:black; border:none; padding:8px 25px; border-radius:20px; font-weight:bold;">Post</button>
         </div>
-        <textarea id="p-input" placeholder="What's on your mind?" style="width:100%; height:200px; background:none; border:none; color:white; font-size:20px; margin-top:30px; outline:none; resize:none;"></textarea>
-        <p id="media-status" style="color:var(--pigeon); font-size:12px;"></p>
-        <input type="file" id="media-file" hidden onchange="document.getElementById('media-status').innerText='📎 Media Attached'">
-        <button onclick="document.getElementById('media-file').click()" style="background:#272727; color:white; border:none; padding:12px; border-radius:10px; width:fit-content; cursor:pointer;">Add Image/Video</button>
+        <textarea id="p-input" placeholder="What's happening?" style="width:100%; height:150px; background:none; border:none; color:white; font-size:20px; margin-top:30px; outline:none; resize:none;"></textarea>
+        
+        <div id="poll-ui" style="display:none; background:#111; padding:15px; border-radius:12px; margin-bottom:15px;">
+            <input type="text" id="o1" class="input-f" style="width:100%" placeholder="Choice 1">
+            <input type="text" id="o2" class="input-f" style="width:100%" placeholder="Choice 2">
+        </div>
+
+        <div id="status-tag" style="color:var(--pigeon); font-size:12px; margin-bottom:10px;"></div>
+
+        <div class="tools">
+            <button class="tool" onclick="tag('Image')">🖼️</button>
+            <button class="tool" onclick="tag('Video')">🎥</button>
+            <button class="tool" onclick="togglePoll()">📊</button>
+            <button class="tool" onclick="tag('Voice')">🎙️</button>
+        </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+    <script>
+        let user = "";
+        let currentTag = null;
+        let pollActive = false;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCrAjMOIh0yD9Vp6Zdp8MJ2qjip8dstdI",
-            authDomain: "pigeon-platform.firebaseapp.com",
-            projectId: "pigeon-platform",
-            storageBucket: "pigeon-platform.firebasestorage.app",
-            messagingSenderId: "322112493288",
-            appId: "1:322112493288:web:f6e5ed8e0c1abb1c469b5d"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        window.uName = ""; window.uPass = ""; window.subOk = false;
-
-        // AUTH GATES
-        window.doSub = () => { window.open("https://youtube.com/@Ultra-wk8ed"); window.subOk = true; };
-        window.doVerify = () => {
-            if(!window.subOk) return alert("Please Subscribe first!");
-            document.getElementById('sub-gate').style.display='none';
-            document.getElementById('id-gate').style.display='flex';
-        };
-
-        window.startApp = () => {
-            const u = document.getElementById('u-name').value;
+        function entry() {
+            const n = document.getElementById('u-name').value;
             const p = document.getElementById('u-pass').value;
-            // EXACT LIMITS ENFORCED HERE
-            if(u.length < 5 || u.length > 10) return alert("Username must be 5-10 characters.");
-            if(p.length < 10) return alert("Password must be at least 10 characters.");
-            
-            window.uName = u; window.uPass = p;
-            
-            // Set Profile UI
-            document.getElementById('u-initial').innerText = u[0].toUpperCase();
-            document.getElementById('u-display').innerText = u;
-            document.getElementById('u-handle').innerText = "@" + u.toLowerCase() + " • View channel";
+            if(n.length < 5 || p.length < 10) return alert("Handle: 5-10 | Pass: 10+");
+            user = n;
+            document.getElementById('id-gate').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'block';
+            addPost({user: 'System', text: 'Welcome to the Ultra Build! Tap the bird logo to play.', type: 'Image'});
+        }
 
-            document.getElementById('id-gate').style.display='none';
-            document.getElementById('main-ui').style.display='block';
-            sync(); // START CLOUD SYNC
-        };
+        function tab(t) { if(t === 'home') document.getElementById('feed').scrollIntoView(); }
+        function openStudio() { document.getElementById('studio').style.display = 'flex'; }
+        function closeStudio() { document.getElementById('studio').style.display = 'none'; }
+        function tag(type) { currentTag = type; document.getElementById('status-tag').innerText = "Attached: " + type; }
+        function togglePoll() { pollActive = !pollActive; document.getElementById('poll-ui').style.display = pollActive ? 'block' : 'none'; }
 
-        // NAVIGATION & STUDIO
-        window.showTab = (t) => {
-            ['home-view', 'shorts-view', 'you-view'].forEach(id => document.getElementById(id).style.display = 'none');
-            document.getElementById(t + '-view').style.display = 'block';
-        };
-        window.openStudio = () => document.getElementById('studio').style.display = 'flex';
-        window.closeStudio = () => document.getElementById('studio').style.display = 'none';
+        // --- THE INSTANT LOGIC ---
+        function postNow() {
+            const txt = document.getElementById('p-input').value;
+            if(!txt && !currentTag) return;
 
-        // SOCIAL POWERS
-        window.react = async (id, type) => { await updateDoc(doc(db, "posts", id), { [type]: increment(1) }); };
-        window.socialAction = (user, type) => alert(`${type} request sent to @${user}`);
-        window.addComment = async (pid, parentId = null) => {
-            const txt = prompt(parentId ? "Reply to user:" : "Add a comment:");
-            if(txt) await addDoc(collection(db, "comments"), { pid, parentId, user: window.uName, text: txt, time: serverTimestamp() });
-        };
+            // 1. Snapshot the data for the feed
+            const postData = {
+                user: user,
+                text: txt,
+                type: currentTag,
+                poll: pollActive ? [document.getElementById('o1').value, document.getElementById('o2').value] : null
+            };
 
-        // POST & AUTO-REDIRECT
-        window.postNow = async () => {
-            const btn = document.getElementById('post-btn'); 
-            const text = document.getElementById('p-input').value;
-            if(!text && !document.getElementById('media-file').files[0]) return alert("Say something!");
-            
-            btn.innerText = "⏳";
-            const file = document.getElementById('media-file').files[0];
-            let url = "", type = "";
-            if(file) {
-                const sRef = ref(storage, `uploads/${Date.now()}`);
-                await uploadBytes(sRef, file);
-                url = await getDownloadURL(sRef);
-                type = file.type.split('/')[0];
-            }
-            
-            await addDoc(collection(db, "posts"), {
-                user: window.uName, pass: window.uPass, text: text,
-                media: url, mediaType: type, likes: 0, dislikes: 0, time: serverTimestamp()
-            });
-            
-            // THE SMOOTH REDIRECT
-            btn.innerText = "Post";
+            // 2. WIPE EVERYTHING IMMEDIATELY
             document.getElementById('p-input').value = "";
-            document.getElementById('media-status').innerText = "";
-            document.getElementById('media-file').value = "";
+            document.getElementById('o1').value = "";
+            document.getElementById('o2').value = "";
+            document.getElementById('status-tag').innerText = "";
+            currentTag = null; pollActive = false;
+            document.getElementById('poll-ui').style.display = 'none';
+
+            // 3. TELEPORT HOME IMMEDIATELY
             closeStudio();
-            showTab('home'); 
-        };
+            addPost(postData);
+            alert("Sent!");
+        }
 
-        // FIREBASE SYNC ENGINE
-        function sync() {
-            onSnapshot(query(collection(db, "posts"), orderBy("time", "desc")), (snap) => {
-                const f = document.getElementById('home-view'); 
-                const s = document.getElementById('shorts-view');
-                const mf = document.getElementById('my-posts');
-                f.innerHTML = ""; s.innerHTML = ""; mf.innerHTML = "";
-                
-                snap.forEach(d => {
-                    const p = d.data(); const id = d.id;
-                    let mHtml = p.mediaType === 'image' ? `<img src="${p.media}" class="post-media">` : (p.mediaType === 'video' ? `<video src="${p.media}" controls class="post-media"></video>` : "");
-                    
-                    const card = `
-                        <div class="card">
-                            <div style="display:flex; gap:12px;">
-                                <div style="width:40px; height:40px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-weight:bold;">${p.user[0].toUpperCase()}</div>
-                                <div style="flex:1">
-                                    <div class="soc-row">
-                                        <b>@${p.user}</b>
-                                        <button class="badge-btn" onclick="socialAction('${p.user}', 'Follow')">Follow</button>
-                                        <button class="badge-btn" onclick="socialAction('${p.user}', 'Friend')">Friend</button>
-                                    </div>
-                                    <p style="margin:5px 0;">${p.text}</p>
-                                    ${mHtml}
-                                    <div class="action-bar">
-                                        <button class="action-btn" onclick="react('${id}', 'likes')">❤️ ${p.likes || 0}</button>
-                                        <button class="action-btn" onclick="react('${id}', 'dislikes')">👎 ${p.dislikes || 0}</button>
-                                        <button class="action-btn" onclick="addComment('${id}')">💬 Comment</button>
-                                    </div>
-                                    <div id="comments-${id}" class="comment-box"></div>
-                                </div>
-                            </div>
-                        </div>`;
-                    
-                    f.innerHTML += card;
-                    if(p.user === window.uName) mf.innerHTML += card;
-                    if(p.mediaType === 'video') {
-                        s.innerHTML += `<div style="height:100%; scroll-snap-align:start; display:flex; align-items:center;"><video src="${p.media}" loop style="width:100%;" onclick="this.paused?this.play():this.pause()"></video></div>`;
-                    }
-                    loadComments(id);
+        function addPost(p) {
+            const feed = document.getElementById('feed');
+            let attachmentHtml = "";
+            
+            if(p.type === 'Image') attachmentHtml = `<div class="media-box" style="height:180px; display:flex; align-items:center; justify-content:center; color:#444;">[Image Attached]</div>`;
+            if(p.type === 'Video') attachmentHtml = `<div class="media-box" style="height:180px; background:#000; display:flex; align-items:center; justify-content:center;">▶️ Video File</div>`;
+            if(p.type === 'Voice') attachmentHtml = `<div class="media-box" style="padding:15px; display:flex; align-items:center; gap:10px;"><button style="border-radius:50%; border:none; width:35px; height:35px; background:var(--pigeon);">▶</button> <div style="flex:1; height:3px; background:#333;"></div> <span>0:15</span></div>`;
+            if(p.poll) attachmentHtml = `<div style="margin-top:10px;"><div class="poll-opt"><div class="poll-fill" style="width:30%"></div>${p.poll[0]}</div><div class="poll-opt"><div class="poll-fill" style="width:70%"></div>${p.poll[1]}</div></div>`;
+
+            const card = `
+                <div class="card">
+                    <b style="color:var(--pigeon)">@${p.user}</b>
+                    <p style="margin:8px 0;">${p.text}</p>
+                    ${attachmentHtml}
+                    <div style="margin-top:12px; display:flex; gap:20px; font-size:13px; color:var(--gray);">
+                        <span>❤️ Like</span> <span>💬 Reply</span> <span>🔄 Repost</span>
+                    </div>
+                    <div style="margin-top:10px; padding-left:15px; border-left:2px solid #222; font-size:12px; color:#666;">
+                        <b>@Moderator:</b> High quality post!
+                    </div>
+                </div>
+            `;
+            feed.innerHTML = card + feed.innerHTML;
+        }
+
+        // --- FLAPPY PIGEON WITH PIPES ---
+        const cvs = document.getElementById('flappy'); const ctx = cvs.getContext('2d');
+        let bY, bV, pipes, score, loop;
+        function launchGame() {
+            document.getElementById('game-overlay').style.display = 'flex';
+            bY = 240; bV = 0; pipes = []; score = 0;
+            loop = setInterval(() => {
+                ctx.fillStyle = "#70c5ce"; ctx.fillRect(0,0,320,480);
+                bV += 0.35; bY += bV;
+                if(Math.random() < 0.015) pipes.push({x: 320, h: Math.random()*200+50, gap: 130});
+                ctx.fillStyle = "#2ecc71";
+                pipes.forEach(p => { 
+                    p.x -= 3; 
+                    ctx.fillRect(p.x, 0, 50, p.h); ctx.fillRect(p.x, p.h+p.gap, 50, 480);
+                    if(p.x === 50) score++;
+                    if(p.x > 20 && p.x < 80 && (bY < p.h || bY > p.h+p.gap)) stopGame();
                 });
-            });
+                pipes = pipes.filter(p => p.x > -50);
+                ctx.font = "30px Arial"; ctx.fillText("🕊️", 50, bY);
+                ctx.fillStyle = "white"; ctx.font = "bold 20px Arial"; ctx.fillText("SCORE: " + score, 15, 30);
+                if(bY > 480 || bY < 0) stopGame();
+            }, 20);
         }
-
-        function loadComments(pid) {
-            onSnapshot(query(collection(db, "comments"), where("pid", "==", pid), orderBy("time", "asc")), (snap) => {
-                const zone = document.getElementById(`comments-${pid}`); if(!zone) return;
-                zone.innerHTML = "";
-                snap.forEach(d => {
-                    const c = d.data();
-                    zone.innerHTML += `<div style="margin-bottom:6px;"><b>@${c.user}:</b> ${c.text} <span style="color:var(--pigeon); font-size:11px; cursor:pointer; margin-left:8px;" onclick="addComment('${pid}', '${d.id}')">Reply</span></div>`;
-                });
-            });
-        }
-
-        // --- FLAPPY PIGEON GAME ---
-        const canvas = document.getElementById('flappyCanvas');
-        const ctx = canvas.getContext('2d');
-        let birdY, birdV, gameLoop;
-
-        window.launchEgg = () => { document.getElementById('game-overlay').style.display = 'flex'; birdY = 200; birdV = 0; gameLoop = setInterval(updateGame, 20); };
-        window.stopGame = () => { clearInterval(gameLoop); document.getElementById('game-overlay').style.display = 'none'; };
-        canvas.onclick = () => { birdV = -7; };
-
-        function updateGame() {
-            ctx.fillStyle = "#70c5ce"; ctx.fillRect(0, 0, 320, 480);
-            birdV += 0.4; birdY += birdV;
-            ctx.font = "35px Arial"; ctx.fillText("🕊️", 50, birdY);
-            if(birdY > 480 || birdY < 0) { alert("Game Over!"); stopGame(); }
-        }
+        function stopGame() { clearInterval(loop); document.getElementById('game-overlay').style.display = 'none'; }
+        cvs.onclick = () => bV = -6;
     </script>
 </body>
 </html>
