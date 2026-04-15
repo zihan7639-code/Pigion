@@ -1,124 +1,86 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pigeon Ultra</title>
+    <title>Pigeon Ultra | Pro</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <style>
-        :root { --pigeon: #1DA1F2; --dark: #000000; --border: #2f3336; --gray: #202327; --text: #f7f9f9; }
+        :root { --pigeon: #1DA1F2; --dark: #000000; --gray: #16181c; --border: #2f3336; --text: #f7f9f9; }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--dark); color: var(--text); height: 100vh; overflow: hidden; }
-        
-        /* AUTH OVERLAYS */
-        .overlay { position: fixed; inset: 0; background: white; color: black; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5000; text-align: center; padding: 20px; }
+        body { margin: 0; font-family: sans-serif; background: var(--dark); color: var(--text); height: 100vh; overflow: hidden; }
+
+        /* AUTH & BARS (Keeping your previous styles) */
+        .overlay { position: fixed; inset: 0; background: white; color: black; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9000; padding: 20px; text-align: center; }
         .black-bg { background: var(--dark) !important; color: white !important; display: none; }
-        input { width: 100%; max-width: 300px; padding: 15px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; outline: none; }
-        .btn { width: 100%; max-width: 300px; padding: 14px; border-radius: 25px; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
-
-        /* TOP BAR */
-        header { 
-            height: 50px; background: var(--dark); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between; padding: 0 15px;
-            position: fixed; top: 0; width: 100%; z-index: 1000;
-        }
+        header { height: 50px; background: var(--dark); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; position: fixed; top: 0; width: 100%; z-index: 1000; }
+        nav { height: 65px; background: var(--dark); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; z-index: 1000; }
         
-        /* BOTTOM BAR (YOUTUBE STYLE) */
-        nav { 
-            height: 65px; background: var(--dark); border-top: 1px solid var(--border);
-            display: flex; justify-content: space-around; align-items: center;
-            position: fixed; bottom: 0; width: 100%; z-index: 1000;
-        }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; background: none; border: none; color: white; font-size: 10px; cursor: pointer; }
-        .nav-btn span { font-size: 20px; margin-bottom: 3px; }
-        .plus-btn { font-size: 35px !important; }
-
-        /* POST STUDIO (COMPOSER) */
-        #composer { 
-            position: fixed; inset: 0; background: var(--dark); z-index: 4000; display: none; 
-            flex-direction: column; padding: 20px;
-        }
-        .composer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        textarea { width: 100%; height: 150px; background: none; border: none; color: white; font-size: 18px; resize: none; outline: none; }
+        /* MEDIA STYLES */
+        .post-media { width: 100%; border-radius: 15px; margin-top: 10px; border: 1px solid var(--border); }
+        .poll-box { background: var(--gray); border-radius: 12px; padding: 10px; margin-top: 10px; }
+        .poll-opt { background: #333; padding: 8px; margin: 5px 0; border-radius: 8px; cursor: pointer; text-align: center; font-size: 14px; }
         
-        .tool-box { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-        .tool-btn { 
-            background: var(--gray); border: none; color: white; padding: 10px 15px; 
-            border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;
-        }
-        .gray-add { width: 40px; height: 40px; background: #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-
-        /* MAIN APP CONTENT */
+        /* COMPOSER TOOLBOX */
+        #composer { position: fixed; inset: 0; background: var(--dark); z-index: 5000; display: none; flex-direction: column; padding: 20px; }
+        .tool-box { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; padding-bottom: 20px; }
+        .tool-btn { background: var(--gray); border: none; color: white; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+        .gray-add { width: 30px; height: 30px; background: #444; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        
         #app { display: none; margin-top: 50px; margin-bottom: 65px; height: calc(100vh - 115px); overflow-y: auto; }
         .card { padding: 15px; border-bottom: 1px solid var(--border); }
-        .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div id="sub-choice" class="overlay">
-        <h1>🕊️</h1>
-        <h2>Pigeon Ultra</h2>
-        <button class="btn" style="background:var(--pigeon); color:white;" onclick="step1()">1. Subscribe to Ultra</button>
-        <button class="btn" onclick="step2()" style="background:#eee">2. I have subscribed</button>
+        <h1>🕊️ Pigeon Ultra</h1>
+        <button onclick="goSub()" style="padding:15px; background:var(--pigeon); color:white; border-radius:25px; border:none; width:250px;">1. Subscribe to Ultra</button>
+        <button onclick="goVerify()" style="margin-top:10px; padding:15px; border-radius:25px; width:250px;">2. I have subscribed</button>
     </div>
-
-    <div id="verify-screen" class="overlay black-bg"><div class="spinner"></div></div>
-
+    <div id="verify-screen" class="overlay black-bg"><h3>Verifying...</h3></div>
     <div id="gate" class="overlay" style="display:none">
-        <h2>Setup Profile</h2>
-        <input type="text" id="username" placeholder="Name (5-10)" maxlength="10">
-        <input type="password" id="password" placeholder="Password (10-15)" maxlength="15">
-        <button class="btn" style="background:white; color:black" onclick="finalize()">Finalize</button>
+        <h2>Setup Identity</h2>
+        <input type="text" id="username" placeholder="Name (5-10)" maxlength="10" style="padding:10px; margin:5px;">
+        <button onclick="finalize()" style="padding:10px 30px; background:black; color:white; border-radius:20px;">Done</button>
     </div>
 
     <div id="main-ui" style="display:none">
-        <header>
-            <span onclick="alert('Friends')">☰</span>
-            <span onclick="alert('🌟 Easter Egg!')" style="cursor:pointer">🕊️ Pigeon</span>
-            <span onclick="openTab('you')">👤</span>
-        </header>
-
-        <main id="app">
-            <div id="feed"></div>
-            <div id="shorts" style="display:none; text-align:center; padding:50px;">
-                <p>🎥 Shorts Feed (Video Posts Only)</p>
-            </div>
-            <div id="you-view" style="display:none; text-align:center; padding:40px;">
-                <div style="font-size:60px">👤</div>
-                <h2 id="my-handle">@User</h2>
-                <button class="btn" style="background:#f4212e; color:white;" onclick="location.reload()">Logout</button>
-            </div>
-        </main>
+        <header><span>☰</span><b>🕊️ PIGEON</b><span id="top-avatar">👤</span></header>
+        <main id="app"><div id="feed"></div></main>
 
         <div id="composer">
-            <div class="composer-header">
-                <button onclick="closeComposer()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
-                <button onclick="sendPost()" style="background:var(--pigeon); border:none; color:white; padding:8px 20px; border-radius:20px; font-weight:bold;">Post</button>
+            <div style="display:flex; justify-content:space-between;">
+                <span onclick="closePost()" style="font-size:24px">✕</span>
+                <button onclick="publish()" id="publish-btn" style="background:var(--pigeon); color:white; border:none; padding:8px 20px; border-radius:20px;">Done</button>
             </div>
-            <textarea id="post-text" placeholder="What's happening?"></textarea>
+            <textarea id="p-text" placeholder="What's happening?" style="width:100%; height:150px; background:none; border:none; color:white; font-size:18px; outline:none; margin-top:15px;"></textarea>
             
+            <div id="preview" style="color:var(--pigeon); font-size:12px; margin-bottom:10px;"></div>
+
             <div class="tool-box">
-                <button class="tool-btn" onclick="alert('Add Image')"><div class="gray-add">+</div> Image</button>
-                <button class="tool-btn" onclick="alert('Add Video')"><div class="gray-add">+</div> Video</button>
-                <button class="tool-btn" onclick="alert('Add Voice')"><div class="gray-add">+</div> Voice</button>
-                <button class="tool-btn" onclick="alert('Create Poll')">📊 Voting Poll</button>
+                <input type="file" id="img-input" hidden accept="image/*" onchange="previewFile('Image')">
+                <div class="tool-btn" onclick="document.getElementById('img-input').click()"><div class="gray-add">+</div> Image</div>
+                
+                <input type="file" id="vid-input" hidden accept="video/*" onchange="previewFile('Video')">
+                <div class="tool-btn" onclick="document.getElementById('vid-input').click()"><div class="gray-add">+</div> Video</div>
+                
+                <div class="tool-btn" onclick="startVoice()"><div class="gray-add">+</div> Voice</div>
+                <div class="tool-btn" onclick="addPoll()">📊 Voting Poll</div>
             </div>
         </div>
 
         <nav>
-            <button class="nav-btn" onclick="openTab('home')"><span>🏠</span>Home</button>
-            <button class="nav-btn" onclick="openTab('shorts')"><span>🎬</span>Shorts</button>
-            <button class="nav-btn" onclick="openComposer()"><span class="plus-btn">⊕</span></button>
-            <button class="nav-btn" onclick="alert('Subs')"><span>🔔</span>Subs</button>
-            <button class="nav-btn" onclick="openTab('you')"><span>👤</span>You</button>
+            <button onclick="openTab('home')" style="color:white; background:none; border:none;">🏠</button>
+            <button onclick="openPost()" style="font-size:30px; color:white; background:none; border:none;">⊕</button>
+            <button onclick="openTab('you')" style="color:white; background:none; border:none;">👤</button>
         </nav>
     </div>
 
     <script>
+        // CONFIG (Use your keys)
         const firebaseConfig = {
             apiKey: "AIzaSyDCrAjMOIh0yD9Vp6Zdp8M",
             authDomain: "pigeon-platform.firebaseapp.com",
@@ -129,60 +91,104 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        
-        let subReady = false;
+        const storage = firebase.storage();
+
         let myName = "";
+        let subReady = false;
+        let selectedFile = null;
+        let pollData = null;
 
-        function step1() {
-            window.open("https://www.youtube.com/@Ultra-wk8ed", "_blank");
+        // AUTH GATES
+        function goSub() { window.open("https://youtube.com/@Ultra-wk8ed"); subReady = true; }
+        function goVerify() {
+            if(!subReady) return alert("Sub first!");
             document.getElementById('sub-choice').style.display='none';
             document.getElementById('verify-screen').style.display='flex';
-            setTimeout(() => { subReady=true; document.getElementById('verify-screen').style.display='none'; document.getElementById('sub-choice').style.display='flex'; }, 5000);
+            setTimeout(() => { document.getElementById('verify-screen').style.display='none'; document.getElementById('gate').style.display='flex'; }, 3000);
         }
-
-        function step2() {
-            if(!subReady) return alert("Subscribe first!");
-            document.getElementById('sub-choice').style.display='none';
-            document.getElementById('verify-screen').style.display='flex';
-            setTimeout(() => { document.getElementById('verify-screen').style.display='none'; document.getElementById('gate').style.display='flex'; }, 5000);
-        }
-
         function finalize() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            if(u.length >= 5 && u.length <= 10 && p.length >= 10 && p.length <= 15) {
-                myName = u;
-                document.getElementById('my-handle').innerText = "@" + u;
-                document.getElementById('gate').style.display='none';
-                document.getElementById('main-ui').style.display='block';
-                document.getElementById('app').style.display='block';
-                startFeed();
-            } else { alert("Name 5-10, Password 10-15!"); }
+            myName = document.getElementById('username').value;
+            if(myName.length < 5) return alert("Too short!");
+            document.getElementById('gate').style.display='none';
+            document.getElementById('main-ui').style.display='block';
+            document.getElementById('app').style.display='block';
+            sync();
         }
 
-        function openTab(t) {
-            document.getElementById('feed').style.display = (t==='home'?'block':'none');
-            document.getElementById('shorts').style.display = (t==='shorts'?'block':'none');
-            document.getElementById('you-view').style.display = (t==='you'?'block':'none');
+        // POSTING LOGIC
+        function openPost() { document.getElementById('composer').style.display='flex'; }
+        function closePost() { document.getElementById('composer').style.display='none'; selectedFile = null; pollData = null; }
+
+        function previewFile(type) {
+            const input = type === 'Image' ? 'img-input' : 'vid-input';
+            selectedFile = document.getElementById(input).files[0];
+            document.getElementById('preview').innerText = "📎 Attachment: " + type + " added";
         }
 
-        function openComposer() { document.getElementById('composer').style.display = 'flex'; }
-        function closeComposer() { document.getElementById('composer').style.display = 'none'; }
-
-        async function sendPost() {
-            const text = document.getElementById('post-text').value;
-            if(!text) return;
-            await db.collection("posts").add({ user: myName, text: text, time: firebase.firestore.FieldValue.serverTimestamp() });
-            document.getElementById('post-text').value = "";
-            closeComposer();
+        function addPoll() {
+            const q = prompt("Enter Poll Question:");
+            if(q) {
+                pollData = { question: q, options: ["Yes", "No"], votes: [0, 0] };
+                document.getElementById('preview').innerText = "📊 Poll: " + q;
+            }
         }
 
-        function startFeed() {
-            db.collection("posts").orderBy("time", "desc").onSnapshot(s => {
+        async function publish() {
+            const btn = document.getElementById('publish-btn');
+            btn.innerText = "Uploading...";
+            btn.disabled = true;
+
+            let fileUrl = "";
+            let fileType = "";
+
+            if(selectedFile) {
+                const ref = storage.ref(`uploads/${Date.now()}_${selectedFile.name}`);
+                await ref.put(selectedFile);
+                fileUrl = await ref.getDownloadURL();
+                fileType = selectedFile.type.split('/')[0]; // 'image' or 'video'
+            }
+
+            await db.collection("posts").add({
+                user: myName,
+                text: document.getElementById('p-text').value,
+                media: fileUrl,
+                mediaType: fileType,
+                poll: pollData,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            btn.innerText = "Done";
+            btn.disabled = false;
+            closePost();
+        }
+
+        function sync() {
+            db.collection("posts").orderBy("time", "desc").onSnapshot(snap => {
                 const f = document.getElementById('feed'); f.innerHTML = "";
-                s.forEach(d => { f.innerHTML += `<div class="card"><b>@${d.data().user}</b><p>${d.data().text}</p></div>`; });
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    let mediaHtml = "";
+                    if(p.mediaType === 'image') mediaHtml = `<img src="${p.media}" class="post-media">`;
+                    if(p.mediaType === 'video') mediaHtml = `<video src="${p.media}" controls class="post-media"></video>`;
+                    
+                    let pollHtml = "";
+                    if(p.poll) {
+                        pollHtml = `<div class="poll-box"><b>${p.poll.question}</b>`;
+                        p.poll.options.forEach(opt => pollHtml += `<div class="poll-opt">${opt}</div>`);
+                        pollHtml += `</div>`;
+                    }
+
+                    f.innerHTML += `
+                        <div class="card">
+                            <b style="color:var(--pigeon)">@${p.user}</b>
+                            <p>${p.text}</p>
+                            ${mediaHtml}
+                            ${pollHtml}
+                        </div>`;
+                });
             });
         }
     </script>
 </body>
 </html>
+    
