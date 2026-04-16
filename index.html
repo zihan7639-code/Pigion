@@ -13,17 +13,26 @@
         .auth-input { padding:12px; width:260px; border-radius:8px; border:1px solid #333; margin-bottom:10px; background:#111; color:white; outline:none; }
         #recovery-display { display:none; background:#1a1a1a; padding:15px; border-radius:10px; margin-bottom:15px; border:1px dashed var(--pigeon); font-size:12px; width:260px; word-break:break-all; }
 
+        /* --- DRAWER (FRIENDS & SUBS) --- */
+        #friends-drawer { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: #111; z-index: 10001; transition: 0.3s; padding: 20px; border-right: 1px solid #333; overflow-y:auto;}
+        #drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; }
+        #drawer-search { width:100%; padding:10px; margin-bottom:15px; background:#222; color:white; border:1px solid #444; border-radius:8px; outline:none; }
+        .list-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #222; }
+
         /* --- YT BOTTOM BAR --- */
         nav { height: 50px; border-top: 1px solid var(--yt-border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: #000; z-index: 1000; }
         .nav-item { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 18px; flex: 1; opacity: 0.9; cursor: pointer; }
         .nav-text { font-size: 10px; margin-top: 3px; }
         .plus-btn { font-size: 32px; }
 
-        /* --- CARDS & POLLS & COMMENTS --- */
+        /* --- CARDS & MEDIA --- */
         #app { margin-top: 56px; margin-bottom: 50px; height: calc(100vh - 106px); overflow-y: auto; }
         header { height: 56px; border-bottom: 1px solid var(--yt-border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: fixed; top: 0; width: 100%; background: #000; z-index: 1000; }
         .card { padding: 15px; border-bottom: 8px solid var(--yt-border); }
+        .card-media { width: 100%; border-radius: 10px; margin-top: 10px; border:1px solid #333; }
         .action-bar { display: flex; gap: 20px; margin-top: 15px; color: var(--gray); font-size: 13px; cursor: pointer; }
+        .btn-small { background:#222; color:white; border:1px solid #444; padding:3px 8px; border-radius:12px; font-size:11px; cursor:pointer; }
+        .btn-small:hover { background:var(--pigeon); border-color:var(--pigeon); }
         
         .poll-v { margin-top: 10px; }
         .poll-opt { background: #1a1a1a; padding: 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #333; position: relative; overflow: hidden; display: flex; justify-content: space-between; cursor: pointer; }
@@ -33,11 +42,19 @@
         .mini-avatar { background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center; }
         
         /* --- GAME --- */
-        #game-overlay { display:none; position:fixed; inset:0; background: #4ec0ca; z-index: 20000; }
-        #game-bird { position: absolute; font-size: 40px; left: 50px; user-select: none; }
+        #game-overlay { display:none; position:fixed; inset:0; background: #4ec0ca; z-index: 20000; overflow:hidden; }
+        #game-bird { position: absolute; font-size: 35px; left: 50px; user-select: none; z-index:20002; }
+        .pipe { position: absolute; width: 60px; background: #73bf2e; border: 3px solid #558a22; z-index:20001; }
     </style>
 </head>
 <body>
+
+    <div id="drawer-overlay" onclick="toggleDrawer(false)"></div>
+    <div id="friends-drawer">
+        <h2 style="color:var(--pigeon); margin-top:0;">Friends & Subs</h2>
+        <input type="text" id="drawer-search" placeholder="Search friends/subs..." onkeyup="renderDrawerList()">
+        <div id="drawer-list-container"></div>
+    </div>
 
     <div id="id-gate" style="position:fixed; inset:0; background:#000; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 20px;">
         <h1 style="color:var(--pigeon); font-size:40px; margin:0;">🕊️</h1>
@@ -52,7 +69,7 @@
 
     <div id="main-ui" style="display:none">
         <header>
-            <div style="font-size:24px;">☰</div>
+            <div onclick="toggleDrawer(true)" style="font-size:24px; cursor:pointer;">☰</div>
             <div onclick="initFlappy()" style="font-weight:900; font-size:20px; color:var(--pigeon); cursor:pointer;">🕊️ PIGEON</div>
             <div style="font-size:18px;">🔍 🔔</div>
         </header>
@@ -69,8 +86,18 @@
     </div>
 
     <div id="studio" style="position:fixed; inset:0; background:#000; z-index:9000; display:none; flex-direction:column; padding:20px;">
-        <div style="display:flex; justify-content:space-between;"><span onclick="closeStudio()" style="font-size:24px;">✕</span><button onclick="postNow()" style="background:var(--pigeon); color:white; border:none; border-radius:20px; padding:5px 15px; font-weight:bold;">Post</button></div>
-        <textarea id="post-text" placeholder="What's happening?" style="width:100%; height:120px; background:none; border:none; color:white; font-size:18px; margin-top:20px; outline:none;"></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span onclick="closeStudio()" style="font-size:24px; cursor:pointer;">✕</span>
+            <button onclick="postNow()" style="background:var(--pigeon); color:white; border:none; border-radius:20px; padding:8px 20px; font-weight:bold; cursor:pointer;">Post</button>
+        </div>
+        <textarea id="post-text" placeholder="What's happening?" style="width:100%; height:100px; background:none; border:none; color:white; font-size:18px; margin-top:20px; outline:none;"></textarea>
+        
+        <input type="file" id="media-upload" accept="image/*, video/*" hidden onchange="handleMedia(this)">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="document.getElementById('media-upload').click()" style="background:#222; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">📷 Attach Media</button>
+        </div>
+        <div id="media-preview-container" style="display:none; margin-top:10px; position:relative; border-radius:10px; overflow:hidden;"></div>
+
         <div id="poll-inputs" style="margin-top:20px; border-top:1px dashed #333; padding-top:15px;">
             <p style="margin:0 0 10px 0; color:var(--gray); font-size:13px;">Add a Poll (Optional)</p>
             <input type="text" class="auth-input poll-opt-in" placeholder="Option 1">
@@ -79,15 +106,16 @@
     </div>
 
     <div id="game-overlay">
-        <div style="text-align:center; padding:20px; color:white; font-weight:bold; z-index:20001; position:relative;">Score: <span id="game-score">0</span> | <button onclick="stopFlappy()">Exit</button><br><small>Tap to jump!</small></div>
+        <div style="text-align:center; padding:20px; color:white; font-weight:bold; z-index:20003; position:relative; text-shadow: 2px 2px 0 #000;">Score: <span id="game-score">0</span> | <button onclick="stopFlappy()" style="background:white; color:black; border:none; border-radius:5px; padding:2px 8px; font-weight:bold;">Exit</button><br><small>Tap to jump!</small></div>
         <div id="game-bird">🕊️</div>
     </div>
 
     <script>
-        let userHandle = "", userEmoji = "👤", recoveryKey = "", allPosts = [];
-        let openComms = [], openReps = []; // Keeps track of open comment/reply tabs
+        let userHandle = "", userEmoji = "👤", recoveryKey = "";
+        let allPosts = [], openComms = [], openReps = []; 
+        let networkList = []; // Stores objects: { handle, emoji, type: 'friend'|'sub' }
+        let currentMedia = null; // Fix for media upload
 
-        // Generate 1000 Emojis
         const grid = document.getElementById('emoji-grid');
         for(let i=128512; i<129512; i++){
             let s = document.createElement('span'); s.innerHTML = `&#${i};`;
@@ -106,43 +134,110 @@
             document.getElementById('main-auth-btn').onclick = () => {
                 document.getElementById('id-gate').style.display = 'none';
                 document.getElementById('main-ui').style.display = 'block';
-                renderFeed(); // Show blank feed or instructions
+                renderFeed(); 
             };
         }
 
+        // --- DRAWER & NETWORK SYSTEM ---
+        function toggleDrawer(show) {
+            document.getElementById('friends-drawer').style.left = show ? "0" : "-280px";
+            document.getElementById('drawer-overlay').style.display = show ? "block" : "none";
+            if(show) renderDrawerList();
+        }
+
+        function addNetwork(handle, emoji, type) {
+            if(handle === userHandle) return alert("You can't add yourself!");
+            let exists = networkList.find(n => n.handle === handle && n.type === type);
+            if(!exists) {
+                networkList.push({ handle, emoji, type });
+                alert(`Added ${handle} to your ${type === 'friend' ? 'Friends' : 'Subscriptions'}!`);
+            } else {
+                alert(`Already ${type === 'friend' ? 'friends with' : 'subscribed to'} ${handle}`);
+            }
+        }
+
+        function renderDrawerList() {
+            const query = document.getElementById('drawer-search').value.toLowerCase();
+            const container = document.getElementById('drawer-list-container');
+            const filtered = networkList.filter(n => n.handle.toLowerCase().includes(query));
+            
+            if(filtered.length === 0) {
+                container.innerHTML = "<p style='color:var(--gray); font-size:12px;'>No connections found.</p>";
+                return;
+            }
+            
+            container.innerHTML = filtered.map(n => `
+                <div class="list-item">
+                    <div class="mini-avatar" style="width:30px; height:30px; font-size:16px;">${n.emoji}</div>
+                    <div style="flex:1;">
+                        <b style="font-size:14px;">@${n.handle}</b><br>
+                        <span style="font-size:10px; color:${n.type==='friend' ? 'var(--pigeon)' : 'gold'};">${n.type.toUpperCase()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- STUDIO & MEDIA BUG FIX ---
         function openStudio() { document.getElementById('studio').style.display = 'flex'; }
         function closeStudio() { document.getElementById('studio').style.display = 'none'; }
+        
+        function handleMedia(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const isVideo = file.type.startsWith('video');
+                currentMedia = { type: isVideo ? 'video' : 'image', src: e.target.result };
+                const prevBox = document.getElementById('media-preview-container');
+                prevBox.style.display = 'block';
+                prevBox.innerHTML = isVideo 
+                    ? `<video src="${e.target.result}" style="width:100%; max-height:200px; border-radius:10px;" controls></video>`
+                    : `<img src="${e.target.result}" style="width:100%; max-height:200px; object-fit:contain; border-radius:10px;">`;
+            };
+            reader.readAsDataURL(file);
+        }
 
         function postNow() {
             const opts = Array.from(document.querySelectorAll('.poll-opt-in')).map(i => ({ text: i.value, votes: 0, voters: [] })).filter(o => o.text);
             allPosts.unshift({ 
                 id: Date.now(), user: userHandle, emoji: userEmoji, 
                 text: document.getElementById('post-text').value, 
+                media: currentMedia, // Media attached here
                 poll: opts.length > 0 ? opts : null, 
                 likes: 0, dislikes: 0, comments: [] 
             });
-            document.getElementById('post-text').value = ""; // clear
-            document.querySelectorAll('.poll-opt-in').forEach(i => i.value = ""); // clear
+            // Reset Studio
+            document.getElementById('post-text').value = ""; 
+            document.querySelectorAll('.poll-opt-in').forEach(i => i.value = ""); 
+            currentMedia = null;
+            document.getElementById('media-preview-container').style.display = 'none';
+            document.getElementById('media-upload').value = "";
             renderFeed(); closeStudio();
         }
 
-        function toggle(type, id) {
-            let arr = type === 'C' ? openComms : openReps;
-            if(arr.includes(id)) arr.splice(arr.indexOf(id), 1); else arr.push(id);
-            renderFeed();
-        }
+        function toggle(type, id) { let arr = type === 'C' ? openComms : openReps; if(arr.includes(id)) arr.splice(arr.indexOf(id), 1); else arr.push(id); renderFeed(); }
 
         function renderFeed() {
-            if(allPosts.length === 0) return document.getElementById('feed').innerHTML = "<p style='text-align:center; padding:20px; color:var(--gray);'>Feed is empty. Be the first to post!</p>";
+            if(allPosts.length === 0) return document.getElementById('feed').innerHTML = "<p style='text-align:center; padding:20px; color:var(--gray);'>Feed is empty. Click ⊕ to post!</p>";
 
             document.getElementById('feed').innerHTML = allPosts.map(post => `
                 <div class="card">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                        <div class="mini-avatar" style="width:35px; height:35px; font-size:20px;">${post.emoji}</div>
-                        <b>@${post.user}</b>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="mini-avatar" style="width:35px; height:35px; font-size:20px;">${post.emoji}</div>
+                            <b>@${post.user}</b>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn-small" onclick="addNetwork('${post.user}', '${post.emoji}', 'friend')">+ Friend</button>
+                            <button class="btn-small" style="color:gold; border-color:gold;" onclick="addNetwork('${post.user}', '${post.emoji}', 'sub')">★ Sub</button>
+                        </div>
                     </div>
                     <p style="margin:5px 0 10px 0;">${post.text}</p>
                     
+                    ${post.media ? (post.media.type === 'video' 
+                        ? `<video src="${post.media.src}" class="card-media" controls></video>` 
+                        : `<img src="${post.media.src}" class="card-media">`) : ''}
+
                     ${post.poll ? `
                     <div class="poll-v">
                         ${post.poll.map((opt, i) => {
@@ -170,24 +265,14 @@
                                     <div class="mini-avatar" style="width:20px; height:20px; font-size:12px;">${c.emoji}</div>
                                     <span style="font-size:13px;"><b>@${c.user}</b>: ${c.text}</span>
                                 </div>
-                                <div style="font-size:11px; color:var(--gray); display:flex; gap:12px; margin-top:4px; margin-left:28px;">
-                                    <span onclick="actC(${post.id}, ${c.id}, 'L')" style="cursor:pointer">👍 ${c.likes}</span>
-                                    <span onclick="actC(${post.id}, ${c.id}, 'D')" style="cursor:pointer">👎 ${c.dislikes}</span>
-                                    <span onclick="toggle('R', ${c.id})" style="cursor:pointer; color:var(--pigeon)">Reply</span>
-                                </div>
-
                                 <div style="display: ${openReps.includes(c.id) ? 'block' : 'none'}; margin-left:28px; margin-top:5px; border-left:1px dashed #444; padding-left:10px;">
-                                    ${c.replies.map(r => `
-                                        <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-                                            <div class="mini-avatar" style="width:16px; height:16px; font-size:10px;">${r.emoji}</div>
-                                            <span style="font-size:12px; color:#ddd;"><b>@${r.user}</b>: ${r.text}</span>
-                                        </div>
-                                    `).join('')}
-                                    <input type="text" class="c-input" style="padding:5px; font-size:11px;" placeholder="Reply to @${c.user}... (Press Enter)" onkeydown="if(event.key==='Enter') addReply(${post.id}, ${c.id}, this)">
+                                    ${c.replies.map(r => `<div style="margin-top:6px; display:flex; gap:6px; align-items:center;"><div class="mini-avatar" style="width:16px; height:16px; font-size:10px;">${r.emoji}</div><span style="font-size:12px; color:#ddd;"><b>@${r.user}</b>: ${r.text}</span></div>`).join('')}
+                                    <input type="text" class="c-input" style="padding:5px; font-size:11px;" placeholder="Reply... (Enter)" onkeydown="if(event.key==='Enter') addReply(${post.id}, ${c.id}, this)">
                                 </div>
+                                <span onclick="toggle('R', ${c.id})" style="font-size:11px; cursor:pointer; color:var(--pigeon); margin-left:28px;">Reply</span>
                             </div>
                         `).join('')}
-                        <input type="text" class="c-input" placeholder="Add a comment... (Press Enter)" onkeydown="if(event.key==='Enter') addComm(${post.id}, this)">
+                        <input type="text" class="c-input" placeholder="Add a comment... (Enter)" onkeydown="if(event.key==='Enter') addComm(${post.id}, this)">
                     </div>
                 </div>
             `).join('');
@@ -199,36 +284,100 @@
             p.poll[idx].votes++; p.poll[idx].voters.push(userHandle); renderFeed();
         }
 
-        // Post actions
         function actP(pid, act) { const p=allPosts.find(x=>x.id===pid); act==='L'?p.likes++:p.dislikes++; renderFeed(); }
-        // Comment actions
-        function actC(pid, cid, act) { const c=allPosts.find(x=>x.id===pid).comments.find(y=>y.id===cid); act==='L'?c.likes++:c.dislikes++; renderFeed(); }
-
         function addComm(pid, el) {
             if(!el.value.trim()) return;
             allPosts.find(p=>p.id===pid).comments.push({ id: Date.now(), user: userHandle, emoji: userEmoji, text: el.value, likes: 0, dislikes: 0, replies: [] });
             el.value = ""; if(!openComms.includes(pid)) openComms.push(pid); renderFeed();
         }
-
         function addReply(pid, cid, el) {
             if(!el.value.trim()) return;
             allPosts.find(p=>p.id===pid).comments.find(c=>c.id===cid).replies.push({ id: Date.now(), user: userHandle, emoji: userEmoji, text: el.value });
             el.value = ""; if(!openReps.includes(cid)) openReps.push(cid); renderFeed();
         }
 
-        // Flappy Game
-        let bY = 200, bV = 0, gLoop, score=0;
+        // --- FLAPPY PIPES BUG FIX ---
+        let bY = 200, bV = 0, gLoop, score=0, pipes=[], frames=0;
         function initFlappy() {
             document.getElementById('game-overlay').style.display = 'block';
-            bY = window.innerHeight / 2; bV = 0; score = 0; document.getElementById('game-score').innerText = score;
-            document.getElementById('game-overlay').onclick = () => { bV = -8; score++; document.getElementById('game-score').innerText = score; };
-            gLoop = setInterval(() => {
-                bV += 0.5; bY += bV;
-                document.getElementById('game-bird').style.top = bY + "px";
-                if(bY > window.innerHeight || bY < 0) stopFlappy();
-            }, 30);
+            bY = window.innerHeight / 2; bV = 0; score = 0; pipes = []; frames = 0;
+            document.getElementById('game-score').innerText = score;
+            document.querySelectorAll('.pipe').forEach(e => e.remove()); // clear old pipes
+            
+            // Jump handler
+            document.getElementById('game-overlay').onclick = () => { bV = -8; };
+            gLoop = setInterval(updateFlappy, 30);
         }
-        function stopFlappy() { clearInterval(gLoop); document.getElementById('game-overlay').style.display = 'none'; alert("Game Over! Score: " + score); }
+
+        function updateFlappy() {
+            frames++;
+            bV += 0.5; bY += bV; // Gravity
+            document.getElementById('game-bird').style.top = bY + "px";
+
+            // Spawn Pipes (from the right, moving left)
+            if (frames % 80 === 0) {
+                const gapY = Math.random() * (window.innerHeight - 300) + 100;
+                const gapSize = 180; 
+
+                let pTop = document.createElement('div');
+                pTop.className = 'pipe';
+                pTop.style.top = '0px';
+                pTop.style.height = (gapY - gapSize/2) + 'px';
+                
+                let pBot = document.createElement('div');
+                pBot.className = 'pipe';
+                pBot.style.top = (gapY + gapSize/2) + 'px';
+                pBot.style.height = (window.innerHeight - gapY - gapSize/2) + 'px';
+
+                document.getElementById('game-overlay').appendChild(pTop);
+                document.getElementById('game-overlay').appendChild(pBot);
+
+                pipes.push({ x: window.innerWidth, top: pTop, bot: pBot, passed: false });
+            }
+
+            // Move and Check Pipes
+            pipes.forEach(p => {
+                p.x -= 5; // Move left
+                p.top.style.left = p.x + 'px';
+                p.bot.style.left = p.x + 'px';
+
+                // Hitbox detection
+                let birdRect = document.getElementById('game-bird').getBoundingClientRect();
+                let tpRect = p.top.getBoundingClientRect();
+                let bpRect = p.bot.getBoundingClientRect();
+
+                if (
+                    birdRect.right - 10 > tpRect.left && 
+                    birdRect.left + 10 < tpRect.right && 
+                    (birdRect.top + 10 < tpRect.bottom || birdRect.bottom - 10 > bpRect.top)
+                ) {
+                    stopFlappy(); // Crashed into pipe
+                }
+
+                // Score check
+                if (!p.passed && p.x < 50) {
+                    p.passed = true;
+                    score++;
+                    document.getElementById('game-score').innerText = score;
+                }
+            });
+
+            // Cleanup offscreen pipes
+            if (pipes.length > 0 && pipes[0].x < -100) {
+                pipes[0].top.remove();
+                pipes[0].bot.remove();
+                pipes.shift();
+            }
+
+            // Floor/Ceiling crash
+            if(bY > window.innerHeight || bY < 0) stopFlappy();
+        }
+
+        function stopFlappy() { 
+            clearInterval(gLoop); 
+            document.getElementById('game-overlay').style.display = 'none'; 
+            alert("Game Over! Score: " + score); 
+        }
     </script>
 </body>
 </html>
