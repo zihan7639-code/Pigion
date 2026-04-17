@@ -3,497 +3,455 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pigeon Ultra Pro</title>
+    <title>Pigeon Ultra Pro - Live Edition</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
     <style>
-        :root { --yt-black: #0f0f0f; --yt-border: #272727; --pigeon: #1DA1F2; --text: #ffffff; --gray: #aaaaaa; }
-        * { box-sizing: border-box; font-family: "Roboto", sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--yt-black); color: var(--text); height: 100vh; overflow: hidden; }
+        /* --- 1. DESIGN SYSTEM & RESET --- */
+        :root {
+            --bg-main: #000000;
+            --bg-card: #0f0f0f;
+            --border: #272727;
+            --primary: #1DA1F2;
+            --primary-hover: #1a91da;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --wa-bg: #0b141a;
+            --wa-green: #005c4b;
+            --wa-header: #202c33;
+            --wa-input: #2a3942;
+            --danger: #ff4444;
+        }
 
-        /* --- AUTH SYSTEM --- */
-        .auth-input { padding:12px; width:260px; border-radius:8px; border:1px solid #333; margin-bottom:10px; background:#111; color:white; outline:none; }
-        #recovery-display { display:none; background:#1a1a1a; padding:15px; border-radius:10px; margin-bottom:15px; border:1px dashed var(--pigeon); font-size:12px; width:260px; word-break:break-all; }
-
-        /* --- DRAWER (FRIENDS ONLY) --- */
-        #friends-drawer { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: #111; z-index: 10001; transition: 0.3s; padding: 20px; border-right: 1px solid #333; overflow-y:auto;}
-        #drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; }
-        #drawer-search { width:100%; padding:10px; margin-bottom:15px; background:#222; color:white; border:1px solid #444; border-radius:8px; outline:none; }
-        .list-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #222; }
-
-        /* --- YT BOTTOM BAR --- */
-        nav { height: 50px; border-top: 1px solid var(--yt-border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: #000; z-index: 1000; }
-        .nav-item { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 18px; flex: 1; opacity: 0.9; cursor: pointer; }
-        .nav-text { font-size: 10px; margin-top: 3px; }
-        .plus-btn { font-size: 32px; }
-
-        /* --- CARDS & MEDIA --- */
-        #app { margin-top: 56px; margin-bottom: 50px; height: calc(100vh - 106px); overflow-y: auto; }
-        header { height: 56px; border-bottom: 1px solid var(--yt-border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: fixed; top: 0; width: 100%; background: #000; z-index: 1000; }
-        .card { padding: 15px; border-bottom: 8px solid var(--yt-border); }
-        .card-media { width: 100%; border-radius: 10px; margin-top: 10px; border:1px solid #333; }
-        .action-bar { display: flex; gap: 20px; margin-top: 15px; color: var(--gray); font-size: 13px; cursor: pointer; }
-        .btn-small { background:#222; color:white; border:1px solid #444; padding:3px 8px; border-radius:12px; font-size:11px; cursor:pointer; }
-        .btn-small:hover { background:var(--pigeon); border-color:var(--pigeon); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-main); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        .poll-v { margin-top: 10px; }
-        .poll-opt { background: #1a1a1a; padding: 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #333; position: relative; overflow: hidden; display: flex; justify-content: space-between; cursor: pointer; }
-        .poll-fill { position: absolute; left: 0; top: 0; height: 100%; background: rgba(29, 161, 242, 0.2); transition: 0.4s ease; pointer-events: none; }
+        /* Hide Scrollbar but keep functionality */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        /* --- 2. TYPOGRAPHY & BUTTONS --- */
+        h1, h2, h3 { font-weight: 800; }
+        button { cursor: pointer; transition: 0.2s ease; outline: none; }
+        button:active { transform: scale(0.95); }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; font-size: 15px; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-small { background: var(--border); color: white; border: none; padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
         
-        .c-input { width:100%; background:#111; color:white; border:1px solid #333; padding:8px; border-radius:5px; margin-top:10px; outline:none; }
-        .mini-avatar { background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+        .input-base { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); background: #111; color: white; outline: none; transition: border 0.2s; }
+        .input-base:focus { border-color: var(--primary); }
+
+        /* --- 3. MAIN LAYOUT --- */
+        header { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; z-index: 1000; }
+        nav { height: 60px; display: flex; justify-content: space-around; align-items: center; background: rgba(0,0,0,0.9); border-top: 1px solid var(--border); position: fixed; bottom: 0; width: 100%; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
         
-        /* --- GAME --- */
-        #game-overlay { display:none; position:fixed; inset:0; background: #4ec0ca; z-index: 20000; overflow:hidden; }
-        #game-bird { position: absolute; font-size: 35px; left: 50px; user-select: none; z-index:20002; }
-        .pipe { position: absolute; width: 60px; background: #73bf2e; border: 3px solid #558a22; z-index:20001; }
+        main { flex: 1; margin-top: 60px; margin-bottom: 60px; overflow-y: auto; scroll-behavior: smooth; }
+        
+        /* --- 4. FEED CARDS --- */
+        .card { padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-main); transition: background 0.2s; }
+        .card:hover { background: #050505; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .card-media { width: 100%; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border); object-fit: cover; max-height: 400px; }
+        .poll-box { background: #151515; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-top: 8px; font-size: 14px; }
+
+        /* --- 5. STUDIO & OVERLAYS --- */
+        .overlay { position: fixed; inset: 0; background: var(--bg-main); z-index: 15000; display: none; flex-direction: column; padding: 20px; }
+        .studio-textarea { width: 100%; flex: 1; background: none; border: none; color: white; font-size: 20px; margin-top: 15px; outline: none; resize: none; }
+        .studio-icon-bar { display: flex; gap: 20px; padding: 15px 0; border-top: 1px solid var(--border); }
+        .s-icon { font-size: 24px; cursor: pointer; color: var(--primary); transition: 0.2s; }
+        .s-icon:active { transform: scale(0.8); }
+        
+        .poll-opt-wrapper { position: relative; margin-bottom: 10px; display: flex; align-items: center; }
+        .remove-opt { position: absolute; right: 15px; color: var(--danger); font-size: 20px; cursor: pointer; }
+        
+        .media-preview { position: relative; display: inline-block; margin-top: 15px; }
+        .media-preview img { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; border: 2px solid var(--border); }
+        .media-preview .remove-media { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+
+        /* --- 6. CHAT & DRAWER --- */
+        #friends-drawer { position: fixed; left: -300px; top: 0; width: 280px; height: 100%; background: #111; z-index: 10001; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        #drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 10000; display: none; }
+        
+        #chat-chamber { background: var(--wa-bg); }
+        .chat-header { background: var(--wa-header); padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; background: url('https://i.ibb.co/5G7Y6Yv/wa-bg.png'); background-color: #0b141a; background-blend-mode: overlay; }
+        .msg-bubble { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14.5px; margin-bottom: 8px; color: white; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.2); }
+        .msg-bubble.sent { align-self: flex-end; background: var(--wa-green); border-top-right-radius: 0; }
+        .msg-bubble.received { align-self: flex-start; background: var(--wa-header); border-top-left-radius: 0; }
+        .chat-input-area { padding: 10px; background: var(--wa-header); display: flex; gap: 10px; align-items: center; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
-<body onload="initApp()">
+<body onload="App.init()">
 
-    <div id="drawer-overlay" onclick="toggleDrawer(false)"></div>
-    <div id="friends-drawer">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2 style="color:var(--pigeon); margin:0;">Friends</h2>
-            <span onclick="toggleDrawer(false)" style="font-size:24px; cursor:pointer; font-weight:bold;">✕</span>
-        </div>
-        <input type="text" id="drawer-search" placeholder="Search friends..." onkeyup="renderDrawerList()">
-        <div id="drawer-list-container"></div>
-        <button onclick="logout()" style="width:100%; margin-top:20px; padding:10px; background:#c62828; color:white; border:none; border-radius:8px; cursor:pointer;">Switch Account / Logout</button>
+    <div id="auth-gate" class="overlay flex-center" style="display: flex;">
+        <h1 style="color:var(--primary); font-size:60px; margin-bottom:10px;">🕊️</h1>
+        <h2 style="margin-bottom:25px; font-size: 28px;">Pigeon Live</h2>
+        <input type="text" id="auth-handle" class="input-base" style="width:280px; margin-bottom:15px; text-align: center; font-size: 16px;" placeholder="Choose your handle">
+        <div id="emoji-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:15px; background:#111; padding:15px; border-radius:12px; margin-bottom:25px; border: 1px solid var(--border);"></div>
+        <button onclick="App.register()" class="btn-primary" style="width: 280px; padding: 15px;">ENTER PLATFORM</button>
     </div>
 
-    <div id="id-gate" style="position:fixed; inset:0; background:#000; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 20px;">
-        <h1 style="color:var(--pigeon); font-size:40px; margin:0;">🕊️</h1>
-        <h2 style="font-size:18px; margin-bottom:20px;">Join Pigeon</h2>
-        <input type="text" id="u-name" class="auth-input" placeholder="Handle (5-10)">
-        <input type="password" id="u-pass" class="auth-input" placeholder="Password">
-        <div id="recovery-display"><b style="color:var(--pigeon)">RECOVERY KEY:</b><br><span id="key-text"></span></div>
-        <p style="font-size:12px; color:var(--gray); margin:0 0 5px 0;">Pick your Avatar:</p>
-        <div id="emoji-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; height:120px; width:260px; overflow-y:auto; margin-bottom:15px; background:#111; padding:10px; border-radius:10px;"></div>
-        <button id="main-auth-btn" onclick="register()" style="background:var(--pigeon); color:white; border:none; padding:12px 60px; border-radius:25px; font-weight:bold; cursor:pointer;">CREATE ACCOUNT</button>
-    </div>
-
-    <div id="main-ui" style="display:none">
+    <div id="main-ui" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
         <header>
-            <div onclick="toggleDrawer(true)" style="font-size:24px; cursor:pointer;">☰</div>
-            <div onclick="initFlappy()" style="font-weight:900; font-size:20px; color:var(--pigeon); cursor:pointer;">🕊️ PIGEON</div>
-            <div style="font-size:18px;">🔍 🔔</div>
+            <div onclick="UI.toggleDrawer(true)" style="font-size:24px; cursor:pointer;">☰</div>
+            <div style="font-weight:900; color:var(--primary); letter-spacing:1px; font-size: 18px;">PIGEON</div>
+            <div style="font-size:20px; cursor:pointer;">🔔</div>
         </header>
 
-        <main id="app"><div id="feed"></div></main>
-        
+        <main id="app-feed"></main>
+
         <nav>
-            <div class="nav-item" onclick="switchTab('home')">🏠<span class="nav-text">Home</span></div>
-            <div class="nav-item" onclick="switchTab('home')">🎬<span class="nav-text">Shorts</span></div>
-            <div class="nav-item plus-btn" onclick="openStudio()">⊕</div>
-            <div class="nav-item" onclick="switchTab('subs')">📺<span class="nav-text">Subs</span></div>
-            <div class="nav-item" onclick="switchTab('you')">👤<span class="nav-text">You</span></div>
+            <div onclick="window.scrollTo(0,0)" style="font-size:22px; cursor:pointer;">🏠</div>
+            <div style="font-size:36px; color:var(--primary); cursor:pointer; transform: translateY(-5px);" onclick="UI.openStudio()">⊕</div>
+            <div onclick="UI.toggleDrawer(true)" style="font-size:22px; cursor:pointer;">👤</div>
         </nav>
     </div>
 
-    <div id="studio" style="position:fixed; inset:0; background:#000; z-index:9000; display:none; flex-direction:column; padding:20px;">
+    <div id="studio-ui" class="overlay">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span onclick="closeStudio()" style="font-size:24px; cursor:pointer;">✕</span>
-            <button onclick="postNow()" style="background:var(--pigeon); color:white; border:none; border-radius:20px; padding:8px 20px; font-weight:bold; cursor:pointer;">Post</button>
+            <span onclick="UI.closeStudio()" style="font-size:26px; cursor:pointer;">✕</span>
+            <button onclick="App.submitPost()" id="btn-post" class="btn-primary">Post</button>
         </div>
-        <textarea id="post-text" placeholder="What's happening?" style="width:100%; height:100px; background:none; border:none; color:white; font-size:18px; margin-top:20px; outline:none;"></textarea>
         
-        <input type="file" id="media-upload" accept="image/*, video/*" hidden onchange="handleMedia(this)">
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button onclick="document.getElementById('media-upload').click()" style="background:#222; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;">📷 Attach Media</button>
-        </div>
-        <div id="media-preview-container" style="display:none; margin-top:10px; position:relative; border-radius:10px; overflow:hidden;"></div>
+        <textarea id="studio-text" class="studio-textarea" placeholder="What's happening?"></textarea>
+        
+        <div id="studio-polls" style="margin-top: 10px;"></div>
+        <div id="studio-media" class="media-preview hidden"></div>
 
-        <div id="poll-inputs" style="margin-top:20px; border-top:1px dashed #333; padding-top:15px; overflow-y:auto; max-height:200px;">
-            <p style="margin:0 0 10px 0; color:var(--gray); font-size:13px;">Add a Poll (Optional)</p>
-            <div id="dynamic-poll-options">
-                <input type="text" class="auth-input poll-opt-in" placeholder="Option 1">
-                <input type="text" class="auth-input poll-opt-in" placeholder="Option 2">
-            </div>
-            <button id="add-poll-btn" onclick="addPollOption()" style="background:#222; color:white; border:1px solid #444; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:12px; margin-top:5px;">+ Add Option</button>
+        <div class="studio-icon-bar">
+            <span class="s-icon" onclick="UI.addPollOption()" title="Add Poll">📊</span>
+            <span class="s-icon" onclick="document.getElementById('media-upload').click()" title="Add Media">🖼️</span>
+        </div>
+        <input type="file" id="media-upload" accept="image/*, video/*" hidden onchange="UI.handleMediaSelect(this)">
+    </div>
+
+    <div id="chat-chamber" class="overlay">
+        <div class="chat-header">
+            <span onclick="UI.closeChat()" style="font-size:24px; cursor:pointer; padding-right:10px;">←</span>
+            <div id="chat-header-title" style="font-weight:bold; font-size: 18px; display: flex; align-items: center; gap: 8px;"></div>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" class="input-base" style="background:var(--wa-input); border-radius:25px; padding: 12px 20px;" placeholder="Message" onkeypress="if(event.key === 'Enter') App.sendMessage()">
+            <button onclick="App.sendMessage()" style="background:var(--wa-green); color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:18px; display:flex; align-items:center; justify-content:center; flex-shrink: 0;">➤</button>
         </div>
     </div>
 
-    <div id="game-overlay">
-        <div style="text-align:center; padding:20px; color:white; font-weight:bold; z-index:20003; position:relative; text-shadow: 2px 2px 0 #000;">Score: <span id="game-score">0</span> | <button onclick="stopFlappy()" style="background:white; color:black; border:none; border-radius:5px; padding:2px 8px; font-weight:bold;">Exit</button><br><small>Tap to jump!</small></div>
-        <div id="game-bird">🕊️</div>
+    <div id="drawer-overlay" onclick="UI.toggleDrawer(false)"></div>
+    <div id="friends-drawer">
+        <h2 style="color:var(--primary); margin-bottom: 20px;">Connections</h2>
+        <div id="drawer-list" style="flex: 1; overflow-y: auto;"></div>
+        <button onclick="App.logout()" class="btn-small" style="background: var(--danger); padding: 12px; font-size: 14px; margin-top: auto;">Sign Out</button>
     </div>
 
     <script>
-        // Data States
-        let userHandle = "", userEmoji = "👤", recoveryKey = "", isSubscribed = false;
-        let allPosts = [], openComms = [], openReps = []; 
-        let networkList = []; 
-        let currentMedia = null;
-        let currentTab = 'home'; 
+        /**
+         * FIREBASE CONFIGURATION
+         * Provided explicitly by the user.
+         */
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCrAjMOIh0yD9Vp6Zdp8MJ2qjip8dstdI",
+            authDomain: "pigeon-platform.firebaseapp.com",
+            projectId: "pigeon-platform",
+            storageBucket: "pigeon-platform.firebasestorage.app",
+            messagingSenderId: "322112493288",
+            appId: "1:322112493288:web:f6e5ed8e0c1abb1c469b5d",
+            measurementId: "G-37Q5GDJ2Z6"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
 
-        // Initialize App
-        function initApp() {
-            populateEmojis();
-            allPosts.push({ id: 1, user: "PigeonTeam", emoji: "🕊️", text: "Welcome to Pigeon Pro! Try playing the Flappy game by clicking the logo.", likes: 100, dislikes: 0, comments: [] });
-            allPosts.push({ id: 2, user: "NewsBot", emoji: "🤖", text: "Breaking: Developer completes the final update. Sleep is incoming.", likes: 45, dislikes: 2, comments: [] });
-            allPosts.push({ id: 3, user: "TestUser", emoji: "😎", text: "If you subscribe to me, I appear in your Subs tab!", likes: 5, dislikes: 0, comments: [] });
-            allPosts.push({ id: 4, user: "Gamer99", emoji: "🎮", text: "Dodging pipes like a pro right now.", likes: 20, dislikes: 0, comments: [] });
+        /**
+         * GLOBAL STATE
+         */
+        const State = {
+            user: { handle: "", emoji: "👤", isSubscribed: false },
+            network: JSON.parse(localStorage.getItem('pigeon_network') || '[]'),
+            studio: { mediaFile: null, mediaPreviewUrl: null },
+            chat: { activeFriend: null, messages: {} }
+        };
 
-            const savedUser = localStorage.getItem('pigeon_handle');
-            if (savedUser) {
-                userHandle = savedUser;
-                userEmoji = localStorage.getItem('pigeon_emoji') || "👤";
-                recoveryKey = localStorage.getItem('pigeon_key') || "";
-                isSubscribed = localStorage.getItem('pigeon_sub') === 'true';
-                if(localStorage.getItem('pigeon_network')) {
-                    networkList = JSON.parse(localStorage.getItem('pigeon_network'));
+        /**
+         * CORE APPLICATION LOGIC
+         */
+        const App = {
+            init: () => {
+                UI.renderEmojiGrid();
+                const savedHandle = localStorage.getItem('pigeon_handle');
+                if (savedHandle) {
+                    State.user.handle = savedHandle;
+                    State.user.emoji = localStorage.getItem('pigeon_emoji') || "👤";
+                    State.user.isSubscribed = localStorage.getItem('pigeon_sub') === 'true';
+                    
+                    document.getElementById('auth-gate').classList.add('hidden');
+                    document.getElementById('main-ui').classList.remove('hidden');
+                    App.listenToFeed();
                 }
+            },
+
+            register: () => {
+                const input = document.getElementById('auth-handle').value.trim();
+                if(input.length < 3) return alert("Handle must be at least 3 characters.");
                 
-                document.getElementById('id-gate').style.display = 'none';
-                document.getElementById('main-ui').style.display = 'block';
-                renderFeed();
-            }
-        }
-
-        function populateEmojis() {
-            const grid = document.getElementById('emoji-grid');
-            for(let i=128512; i<129512; i++){
-                let s = document.createElement('span'); s.innerHTML = `&#${i};`;
-                s.style.cursor = 'pointer';
-                s.onclick = function(){ Array.from(grid.children).forEach(c=>c.style.background='none'); this.style.background='var(--pigeon)'; userEmoji=this.innerHTML; };
-                grid.appendChild(s);
-            }
-        }
-
-        function register() {
-            userHandle = document.getElementById('u-name').value;
-            if(userHandle.length < 5) return alert("Handle min 5 chars");
-            recoveryKey = "PG-" + Math.random().toString(36).substr(2, 10).toUpperCase();
-            document.getElementById('key-text').innerText = recoveryKey;
-            document.getElementById('recovery-display').style.display = "block";
-            document.getElementById('main-auth-btn').innerText = "ENTER PIGEON";
-            document.getElementById('main-auth-btn').onclick = () => {
-                localStorage.setItem('pigeon_handle', userHandle);
-                localStorage.setItem('pigeon_emoji', userEmoji);
-                localStorage.setItem('pigeon_key', recoveryKey);
+                localStorage.setItem('pigeon_handle', input);
+                localStorage.setItem('pigeon_emoji', State.user.emoji);
                 localStorage.setItem('pigeon_sub', 'false');
+                location.reload(); // Reloads app to trigger bypass
+            },
 
-                document.getElementById('id-gate').style.display = 'none';
-                document.getElementById('main-ui').style.display = 'block';
-                renderFeed(); 
-            };
-        }
+            logout: () => {
+                localStorage.clear();
+                location.reload();
+            },
 
-        function logout() { localStorage.clear(); location.reload(); }
+            unlockSubscription: () => {
+                State.user.isSubscribed = true;
+                localStorage.setItem('pigeon_sub', 'true');
+                App.listenToFeed(); // Re-render feed without reload
+            },
 
-        function unlockSubGate() {
-            isSubscribed = true;
-            localStorage.setItem('pigeon_sub', 'true');
-            alert("Timeline Unlocked!");
-            renderFeed();
-        }
+            listenToFeed: () => {
+                db.collection("posts")
+                  .orderBy("createdAt", "desc")
+                  .onSnapshot(snapshot => {
+                      const posts = [];
+                      snapshot.forEach(doc => posts.push({ id: doc.id, ...doc.data() }));
+                      UI.renderFeed(posts);
+                  }, error => {
+                      console.error("Firestore Error:", error);
+                      document.getElementById('app-feed').innerHTML = `<p style="padding:20px; color:var(--danger); text-align:center;">Failed to connect to database. Check Firebase rules.</p>`;
+                  });
+            },
 
-        function switchTab(tab) {
-            currentTab = tab;
-            renderFeed();
-            window.scrollTo(0,0);
-        }
-
-        // --- DRAWER & NETWORK SYSTEM ---
-        function toggleDrawer(show) {
-            document.getElementById('friends-drawer').style.left = show ? "0" : "-280px";
-            document.getElementById('drawer-overlay').style.display = show ? "block" : "none";
-            if(show) renderDrawerList();
-        }
-
-        function addNetwork(handle, emoji, type) {
-            if(handle === userHandle) return alert("You can't add yourself!");
-            let exists = networkList.find(n => n.handle === handle && n.type === type);
-            if(!exists) {
-                networkList.push({ handle, emoji, type });
-                localStorage.setItem('pigeon_network', JSON.stringify(networkList)); 
-                alert(`Added ${handle} to your ${type === 'friend' ? 'Friends' : 'Subscriptions'}!`);
-            } else {
-                alert(`Already ${type === 'friend' ? 'friends with' : 'subscribed to'} ${handle}`);
-            }
-        }
-
-        function renderDrawerList() {
-            const query = document.getElementById('drawer-search').value.toLowerCase();
-            const container = document.getElementById('drawer-list-container');
-            const filtered = networkList.filter(n => n.type === 'friend' && n.handle.toLowerCase().includes(query));
-            
-            if(filtered.length === 0) {
-                container.innerHTML = "<p style='color:var(--gray); font-size:12px;'>No friends found. Add some!</p>";
-                return;
-            }
-            
-            container.innerHTML = filtered.map(n => `
-                <div class="list-item">
-                    <div class="mini-avatar" style="width:30px; height:30px; font-size:16px;">${n.emoji}</div>
-                    <div style="flex:1;">
-                        <b style="font-size:14px;">@${n.handle}</b>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // --- STUDIO & MEDIA ---
-        function openStudio() { document.getElementById('studio').style.display = 'flex'; }
-        function closeStudio() { document.getElementById('studio').style.display = 'none'; }
-        
-        function handleMedia(input) {
-            const file = input.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const isVideo = file.type.startsWith('video');
-                currentMedia = { type: isVideo ? 'video' : 'image', src: e.target.result };
-                const prevBox = document.getElementById('media-preview-container');
-                prevBox.style.display = 'block';
-                prevBox.innerHTML = isVideo 
-                    ? `<video src="${e.target.result}" style="width:100%; max-height:200px; border-radius:10px;" controls></video>`
-                    : `<img src="${e.target.result}" style="width:100%; max-height:200px; object-fit:contain; border-radius:10px;">`;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function addPollOption() {
-            const container = document.getElementById('dynamic-poll-options');
-            const currentCount = container.children.length;
-            if (currentCount >= 10) return; // limit reached
-            
-            let newInput = document.createElement('input');
-            newInput.type = "text";
-            newInput.className = "auth-input poll-opt-in";
-            newInput.placeholder = "Option " + (currentCount + 1);
-            container.appendChild(newInput);
-
-            if (currentCount + 1 >= 10) {
-                document.getElementById('add-poll-btn').style.display = 'none';
-            }
-        }
-
-        function postNow() {
-            const opts = Array.from(document.querySelectorAll('.poll-opt-in')).map(i => ({ text: i.value, votes: 0, voters: [] })).filter(o => o.text);
-            allPosts.unshift({ 
-                id: Date.now(), user: userHandle, emoji: userEmoji, 
-                text: document.getElementById('post-text').value, 
-                media: currentMedia, 
-                poll: opts.length > 0 ? opts : null, 
-                likes: 0, dislikes: 0, comments: [] 
-            });
-            
-            // Reset Studio
-            document.getElementById('post-text').value = ""; 
-            document.getElementById('dynamic-poll-options').innerHTML = `
-                <input type="text" class="auth-input poll-opt-in" placeholder="Option 1">
-                <input type="text" class="auth-input poll-opt-in" placeholder="Option 2">
-            `;
-            document.getElementById('add-poll-btn').style.display = 'inline-block';
-            
-            currentMedia = null;
-            document.getElementById('media-preview-container').style.display = 'none';
-            document.getElementById('media-upload').value = "";
-            switchTab('home'); 
-            closeStudio();
-        }
-
-        function toggle(type, id) { let arr = type === 'C' ? openComms : openReps; if(arr.includes(id)) arr.splice(arr.indexOf(id), 1); else arr.push(id); renderFeed(); }
-
-        function renderFeed() {
-            let feedBox = document.getElementById('feed');
-            let feedHTML = "";
-            let postsToRender = [];
-
-            if (currentTab === 'you') {
-                feedHTML += `
-                <div style="padding:30px 20px; text-align:center; border-bottom:8px solid #222; background:linear-gradient(180deg, #111, #000);">
-                    <div style="font-size:50px; background:#222; border-radius:50%; width:90px; height:90px; margin:0 auto 10px auto; display:flex; align-items:center; justify-content:center;">${userEmoji}</div>
-                    <h2 style="margin:0;">@${userHandle}</h2>
-                    <p style="color:var(--gray); margin:5px 0;">0 Subscribers</p>
-                    <div style="background:#1a1a1a; padding:10px; border-radius:8px; display:inline-block; margin-top:10px; font-size:12px; border:1px dashed var(--pigeon);">
-                        <span style="color:var(--pigeon)">Recovery Key:</span> ${recoveryKey}
-                    </div>
-                </div>
-                <h3 style="padding:15px; margin:0; border-bottom:1px solid #333;">Your Posts</h3>`;
-                postsToRender = allPosts.filter(p => p.user === userHandle);
-            } 
-            else if (currentTab === 'subs') {
-                feedHTML += `<h3 style="padding:15px; margin:0; border-bottom:1px solid #333; color:gold;">★ Your Subscriptions</h3>`;
-                let subbedHandles = networkList.filter(n => n.type === 'sub').map(n => n.handle);
-                postsToRender = allPosts.filter(p => subbedHandles.includes(p.user));
-            } 
-            else {
-                postsToRender = allPosts;
-            }
-
-            if(postsToRender.length === 0) {
-                feedHTML += `<p style='text-align:center; padding:40px 20px; color:var(--gray);'>Nothing to see here yet!</p>`;
-            } else {
-                postsToRender.forEach((post, index) => {
-                    feedHTML += `
-                    <div class="card">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div class="mini-avatar" style="width:35px; height:35px; font-size:20px;">${post.emoji}</div>
-                                <b>@${post.user}</b>
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                ${post.user !== userHandle ? `<button class="btn-small" onclick="addNetwork('${post.user}', '${post.emoji}', 'friend')">+ Friend</button>` : ''}
-                                ${post.user !== userHandle ? `<button class="btn-small" style="color:gold; border-color:gold;" onclick="addNetwork('${post.user}', '${post.emoji}', 'sub')">★ Sub</button>` : ''}
-                            </div>
-                        </div>
-                        <p style="margin:5px 0 10px 0;">${post.text}</p>
-                        
-                        ${post.media ? (post.media.type === 'video' 
-                            ? `<video src="${post.media.src}" class="card-media" controls></video>` 
-                            : `<img src="${post.media.src}" class="card-media">`) : ''}
-
-                        ${post.poll ? `
-                        <div class="poll-v">
-                            ${post.poll.map((opt, i) => {
-                                const total = post.poll.reduce((a, b) => a + b.votes, 0);
-                                const pct = total === 0 ? 0 : Math.round((opt.votes / total) * 100);
-                                return `
-                                    <div class="poll-opt" onclick="castVote(${post.id}, ${i})">
-                                        <div class="poll-fill" style="width:${pct}%"></div>
-                                        <span style="position:relative">${opt.voters.includes(userHandle) ? '●' : '○'} ${opt.text}</span>
-                                        <span style="position:relative">${opt.votes} votes (${pct}%)</span>
-                                    </div>`;
-                            }).join('')}
-                        </div>` : ''}
-
-                        <div class="action-bar">
-                            <span onclick="actP(${post.id}, 'L')">👍 ${post.likes}</span>
-                            <span onclick="actP(${post.id}, 'D')">👎 ${post.dislikes}</span>
-                            <span onclick="toggle('C', ${post.id})">💬 ${post.comments.length}</span>
-                        </div>
-
-                        <div style="display: ${openComms.includes(post.id) ? 'block' : 'none'}; margin-top:10px; padding-left:10px; border-left:2px solid #333;">
-                            ${post.comments.map(c => `
-                                <div style="margin-top:12px;">
-                                    <div style="display:flex; gap:8px; align-items:center;">
-                                        <div class="mini-avatar" style="width:20px; height:20px; font-size:12px;">${c.emoji}</div>
-                                        <span style="font-size:13px;"><b>@${c.user}</b>: ${c.text}</span>
-                                    </div>
-                                    <div style="display: ${openReps.includes(c.id) ? 'block' : 'none'}; margin-left:28px; margin-top:5px; border-left:1px dashed #444; padding-left:10px;">
-                                        ${(c.replies||[]).map(r => `<div style="margin-top:6px; display:flex; gap:6px; align-items:center;"><div class="mini-avatar" style="width:16px; height:16px; font-size:10px;">${r.emoji}</div><span style="font-size:12px; color:#ddd;"><b>@${r.user}</b>: ${r.text}</span></div>`).join('')}
-                                        <input type="text" class="c-input" style="padding:5px; font-size:11px;" placeholder="Reply... (Enter)" onkeydown="if(event.key==='Enter') addReply(${post.id}, ${c.id}, this)">
-                                    </div>
-                                    <span onclick="toggle('R', ${c.id})" style="font-size:11px; cursor:pointer; color:var(--pigeon); margin-left:28px;">Reply</span>
-                                </div>
-                            `).join('')}
-                            <input type="text" class="c-input" placeholder="Add a comment... (Enter)" onkeydown="if(event.key==='Enter') addComm(${post.id}, this)">
-                        </div>
-                    </div>`;
-
-                    if (currentTab === 'home' && !isSubscribed && (index + 1) % 2 === 0) {
-                        feedHTML += `
-                        <div class="card" style="background:linear-gradient(45deg, #1a1a1a, #000); text-align:center; border-bottom: 8px solid var(--pigeon);">
-                            <h3 style="color:var(--pigeon); margin-top:0;">🕊️ Sub Gate</h3>
-                            <p style="font-size:13px; color:var(--gray);">Subscribe to view the rest of the timeline!</p>
-                            <button onclick="unlockSubGate()" style="background:var(--pigeon); color:white; border:none; padding:10px 20px; border-radius:20px; font-weight:bold; cursor:pointer; margin:5px;">Subscribe Free</button>
-                        </div>`;
-                    }
-                });
-            }
-
-            feedBox.innerHTML = feedHTML;
-        }
-
-        function castVote(pid, idx) {
-            const p = allPosts.find(x => x.id === pid);
-            if(p.poll.some(o => o.voters.includes(userHandle))) return alert("One vote per account!");
-            p.poll[idx].votes++; p.poll[idx].voters.push(userHandle); renderFeed();
-        }
-
-        function actP(pid, act) { const p=allPosts.find(x=>x.id===pid); act==='L'?p.likes++:p.dislikes++; renderFeed(); }
-        function addComm(pid, el) {
-            if(!el.value.trim()) return;
-            allPosts.find(p=>p.id===pid).comments.push({ id: Date.now(), user: userHandle, emoji: userEmoji, text: el.value, likes: 0, dislikes: 0, replies: [] });
-            el.value = ""; if(!openComms.includes(pid)) openComms.push(pid); renderFeed();
-        }
-        function addReply(pid, cid, el) {
-            if(!el.value.trim()) return;
-            let p = allPosts.find(p=>p.id===pid).comments.find(c=>c.id===cid);
-            if(!p.replies) p.replies = [];
-            p.replies.push({ id: Date.now(), user: userHandle, emoji: userEmoji, text: el.value });
-            el.value = ""; if(!openReps.includes(cid)) openReps.push(cid); renderFeed();
-        }
-
-        // --- FLAPPY PIPES FIXED ---
-        let bY = 200, bV = 0, gLoop, score=0, pipes=[], frames=0;
-        
-        function initFlappy() {
-            document.getElementById('game-overlay').style.display = 'block';
-            bY = window.innerHeight / 2; bV = 0; score = 0; pipes = []; frames = 0;
-            document.getElementById('game-score').innerText = score;
-            document.querySelectorAll('.pipe').forEach(e => e.remove()); 
-            
-            document.getElementById('game-overlay').onclick = () => { bV = -8; };
-            gLoop = setInterval(updateFlappy, 30);
-        }
-
-        function updateFlappy() {
-            frames++;
-            bV += 0.5; bY += bV; 
-            document.getElementById('game-bird').style.top = bY + "px";
-
-            if (frames % 80 === 0) {
-                const gapY = Math.random() * (window.innerHeight - 300) + 100;
-                const gapSize = 180; 
-
-                let pTop = document.createElement('div');
-                pTop.className = 'pipe';
-                pTop.style.top = '0px';
-                pTop.style.left = window.innerWidth + 'px'; 
-                pTop.style.height = (gapY - gapSize/2) + 'px';
+            submitPost: async () => {
+                const text = document.getElementById('studio-text').value.trim();
+                const pollInputs = Array.from(document.querySelectorAll('.poll-in')).map(i => i.value.trim());
+                const validPolls = pollInputs.filter(val => val !== "").map(text => ({ text, votes: 0 }));
                 
-                let pBot = document.createElement('div');
-                pBot.className = 'pipe';
-                pBot.style.top = (gapY + gapSize/2) + 'px';
-                pBot.style.left = window.innerWidth + 'px'; 
-                pBot.style.height = (window.innerHeight - gapY - gapSize/2) + 'px';
+                if (!text && !State.studio.mediaFile) return alert("Post cannot be empty.");
 
-                document.getElementById('game-overlay').appendChild(pTop);
-                document.getElementById('game-overlay').appendChild(pBot);
+                const postBtn = document.getElementById('btn-post');
+                postBtn.innerText = "Posting...";
+                postBtn.disabled = true;
 
-                pipes.push({ x: window.innerWidth, top: pTop, bot: pBot, passed: false });
+                try {
+                    let mediaUrl = null;
+                    
+                    // 1. Upload Media to Firebase Storage if exists
+                    if (State.studio.mediaFile) {
+                        const file = State.studio.mediaFile;
+                        const storageRef = storage.ref(`posts/${Date.now()}_${file.name}`);
+                        await storageRef.put(file);
+                        mediaUrl = await storageRef.getDownloadURL();
+                    }
+
+                    // 2. Save Document to Firestore
+                    await db.collection("posts").add({
+                        user: State.user.handle,
+                        emoji: State.user.emoji,
+                        text: text,
+                        mediaUrl: mediaUrl,
+                        poll: validPolls.length > 0 ? validPolls : null,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    UI.closeStudio();
+                } catch (error) {
+                    console.error("Upload Error:", error);
+                    alert("Failed to post. Please ensure Firebase Storage rules are configured.");
+                } finally {
+                    postBtn.innerText = "Post";
+                    postBtn.disabled = false;
+                }
+            },
+
+            addFriend: (handle, emoji) => {
+                if (State.network.some(n => n.handle === handle)) return alert("Already in connections!");
+                State.network.push({ handle, emoji });
+                localStorage.setItem('pigeon_network', JSON.stringify(State.network));
+                alert(`Added @${handle} to connections!`);
+            },
+
+            sendMessage: () => {
+                const input = document.getElementById('chat-input');
+                const text = input.value.trim();
+                if (!text || !State.chat.activeFriend) return;
+
+                const friend = State.chat.activeFriend;
+                if (!State.chat.messages[friend]) State.chat.messages[friend] = [];
+                
+                const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Add user message
+                State.chat.messages[friend].push({ sender: State.user.handle, text, time: timestamp });
+                input.value = "";
+                UI.renderChatMessages();
+
+                // Mock WhatsApp style auto-reply
+                setTimeout(() => {
+                    State.chat.messages[friend].push({ sender: friend, text: "Got it! 👍", time: "Just now" });
+                    UI.renderChatMessages();
+                }, 1200);
             }
+        };
 
-            pipes.forEach(p => {
-                p.x -= 5; 
-                p.top.style.left = p.x + 'px';
-                p.bot.style.left = p.x + 'px';
+        /**
+         * USER INTERFACE & DOM LOGIC
+         */
+        const UI = {
+            renderEmojiGrid: () => {
+                const grid = document.getElementById('emoji-grid');
+                const emojis = ["😎","🔥","🕊️","👽","🤖","🐱","🍕","🚀","💎","👑"];
+                emojis.forEach(e => {
+                    const span = document.createElement('span');
+                    span.innerText = e;
+                    span.style.cssText = "font-size:28px; cursor:pointer; text-align:center; padding:5px; border-radius:8px;";
+                    span.onclick = () => {
+                        Array.from(grid.children).forEach(c => c.style.background='none');
+                        span.style.background = 'var(--border)';
+                        State.user.emoji = e;
+                    };
+                    grid.appendChild(span);
+                });
+            },
 
-                let birdRect = document.getElementById('game-bird').getBoundingClientRect();
-                let tpRect = p.top.getBoundingClientRect();
-                let bpRect = p.bot.getBoundingClientRect();
-
-                if (
-                    birdRect.right - 10 > tpRect.left && 
-                    birdRect.left + 10 < tpRect.right && 
-                    (birdRect.top + 10 < tpRect.bottom || birdRect.bottom - 10 > bpRect.top)
-                ) {
-                    stopFlappy();
+            renderFeed: (posts) => {
+                const container = document.getElementById('app-feed');
+                if (posts.length === 0) {
+                    container.innerHTML = `<p style="text-align:center; padding:40px; color:var(--text-muted);">No posts yet. Be the first to chirp!</p>`;
+                    return;
                 }
 
-                if (!p.passed && p.x < 50) {
-                    p.passed = true;
-                    score++;
-                    document.getElementById('game-score').innerText = score;
+                let html = "";
+                const visiblePosts = State.user.isSubscribed ? posts : posts.slice(0, 2);
+
+                visiblePosts.forEach(p => {
+                    const isOwner = p.user === State.user.handle;
+                    html += `
+                    <div class="card">
+                        <div class="card-header">
+                            <b style="font-size:15px;">${p.emoji} @${p.user}</b>
+                            ${!isOwner ? `<button onclick="App.addFriend('${p.user}', '${p.emoji}')" class="btn-small">+ Connect</button>` : ''}
+                        </div>
+                        <p style="font-size:15px; line-height:1.4; margin-bottom:8px;">${p.text}</p>
+                        ${p.mediaUrl ? `<img src="${p.mediaUrl}" class="card-media" loading="lazy">` : ''}
+                        ${p.poll ? `<div style="margin-top:10px;">${p.poll.map(o => `<div class="poll-box">${o.text}</div>`).join('')}</div>` : ''}
+                    </div>`;
+                });
+
+                if (!State.user.isSubscribed && posts.length > 2) {
+                    html += `
+                    <div class="card" style="text-align:center; background: linear-gradient(180deg, #111 0%, #000 100%); border-bottom: 8px solid var(--primary); padding: 30px 15px;">
+                        <h3 style="margin-bottom: 5px;">🕊️ Sub Gate Locked</h3>
+                        <p style="color:var(--text-muted); font-size:13px; margin-bottom: 15px;">Subscribe to unlock the full live feed.</p>
+                        <button onclick="App.unlockSubscription()" class="btn-primary">Unlock Free</button>
+                    </div>`;
                 }
-            });
 
-            if (pipes.length > 0 && pipes[0].x < -100) {
-                pipes[0].top.remove();
-                pipes[0].bot.remove();
-                pipes.shift();
+                container.innerHTML = html;
+            },
+
+            // --- Studio Functions ---
+            openStudio: () => document.getElementById('studio-ui').style.display = 'flex',
+            
+            closeStudio: () => {
+                document.getElementById('studio-ui').style.display = 'none';
+                document.getElementById('studio-text').value = '';
+                document.getElementById('studio-polls').innerHTML = '';
+                UI.removeMedia();
+            },
+
+            addPollOption: () => {
+                const container = document.getElementById('studio-polls');
+                if (container.children.length >= 5) return alert("Max 5 options allowed.");
+                
+                const div = document.createElement('div');
+                div.className = "poll-opt-wrapper";
+                div.innerHTML = `
+                    <input type="text" class="input-base poll-in" placeholder="Option ${container.children.length + 1}">
+                    <span class="remove-opt" onclick="this.parentElement.remove()">×</span>
+                `;
+                container.appendChild(div);
+            },
+
+            handleMediaSelect: (input) => {
+                const file = input.files[0];
+                if (!file) return;
+                
+                State.studio.mediaFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const container = document.getElementById('studio-media');
+                    container.classList.remove('hidden');
+                    container.innerHTML = `
+                        <img src="${e.target.result}">
+                        <div class="remove-media" onclick="UI.removeMedia()">✕</div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+                input.value = ""; // reset input
+            },
+
+            removeMedia: () => {
+                State.studio.mediaFile = null;
+                const container = document.getElementById('studio-media');
+                container.innerHTML = '';
+                container.classList.add('hidden');
+            },
+
+            // --- Drawer & Chat Functions ---
+            toggleDrawer: (show) => {
+                document.getElementById('friends-drawer').style.left = show ? "0" : "-300px";
+                document.getElementById('drawer-overlay').style.display = show ? "block" : "none";
+                if (show) UI.renderConnections();
+            },
+
+            renderConnections: () => {
+                const container = document.getElementById('drawer-list');
+                container.innerHTML = State.network.map(f => `
+                    <div style="display:flex; align-items:center; gap:12px; padding:15px 0; border-bottom:1px solid var(--border); cursor:pointer;" onclick="UI.openChat('${f.handle}', '${f.emoji}')">
+                        <span style="font-size:24px; background:#222; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;">${f.emoji}</span> 
+                        <b style="font-size:16px;">${f.handle}</b>
+                    </div>
+                `).join('') || "<p style='color:var(--text-muted); font-size:13px; margin-top:20px;'>No connections yet. Find them in the feed!</p>";
+            },
+
+            openChat: (handle, emoji) => {
+                State.chat.activeFriend = handle;
+                document.getElementById('chat-header-title').innerHTML = `<span>${emoji}</span> ${handle}`;
+                document.getElementById('chat-chamber').style.display = 'flex';
+                UI.renderChatMessages();
+            },
+
+            closeChat: () => {
+                document.getElementById('chat-chamber').style.display = 'none';
+                State.chat.activeFriend = null;
+            },
+
+            renderChatMessages: () => {
+                const container = document.getElementById('chat-messages');
+                const friend = State.chat.activeFriend;
+                const msgs = State.chat.messages[friend] || [];
+                
+                container.innerHTML = msgs.map(m => `
+                    <div class="msg-bubble ${m.sender === State.user.handle ? 'sent' : 'received'}">
+                        ${m.text}
+                        <div style="font-size:10px; color:rgba(255,255,255,0.6); text-align:right; margin-top:4px;">${m.time}</div>
+                    </div>
+                `).join('');
+                
+                // Auto-scroll to bottom
+                container.scrollTop = container.scrollHeight;
             }
-
-            if(bY > window.innerHeight || bY < 0) stopFlappy();
-        }
-
-        function stopFlappy() { 
-            clearInterval(gLoop); 
-            document.getElementById('game-overlay').style.display = 'none'; 
-            alert("Game Over! Score: " + score); 
-        }
+        };
     </script>
 </body>
 </html>
