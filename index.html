@@ -13,7 +13,7 @@
         .auth-input { padding:12px; width:260px; border-radius:8px; border:1px solid #333; margin-bottom:10px; background:#111; color:white; outline:none; }
         #recovery-display { display:none; background:#1a1a1a; padding:15px; border-radius:10px; margin-bottom:15px; border:1px dashed var(--pigeon); font-size:12px; width:260px; word-break:break-all; }
 
-        /* --- DRAWER (FRIENDS & SUBS) --- */
+        /* --- DRAWER (FRIENDS ONLY) --- */
         #friends-drawer { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: #111; z-index: 10001; transition: 0.3s; padding: 20px; border-right: 1px solid #333; overflow-y:auto;}
         #drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; }
         #drawer-search { width:100%; padding:10px; margin-bottom:15px; background:#222; color:white; border:1px solid #444; border-radius:8px; outline:none; }
@@ -47,13 +47,17 @@
         .pipe { position: absolute; width: 60px; background: #73bf2e; border: 3px solid #558a22; z-index:20001; }
     </style>
 </head>
-<body>
+<body onload="initApp()">
 
     <div id="drawer-overlay" onclick="toggleDrawer(false)"></div>
     <div id="friends-drawer">
-        <h2 style="color:var(--pigeon); margin-top:0;">Friends & Subs</h2>
-        <input type="text" id="drawer-search" placeholder="Search friends/subs..." onkeyup="renderDrawerList()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 style="color:var(--pigeon); margin:0;">Friends</h2>
+            <span onclick="toggleDrawer(false)" style="font-size:24px; cursor:pointer; font-weight:bold;">✕</span>
+        </div>
+        <input type="text" id="drawer-search" placeholder="Search friends..." onkeyup="renderDrawerList()">
         <div id="drawer-list-container"></div>
+        <button onclick="logout()" style="width:100%; margin-top:20px; padding:10px; background:#c62828; color:white; border:none; border-radius:8px; cursor:pointer;">Switch Account / Logout</button>
     </div>
 
     <div id="id-gate" style="position:fixed; inset:0; background:#000; z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 20px;">
@@ -77,11 +81,11 @@
         <main id="app"><div id="feed"></div></main>
         
         <nav>
-            <div class="nav-item" onclick="location.reload()">🏠<span class="nav-text">Home</span></div>
-            <div class="nav-item">🎬<span class="nav-text">Shorts</span></div>
+            <div class="nav-item" onclick="switchTab('home')">🏠<span class="nav-text">Home</span></div>
+            <div class="nav-item" onclick="switchTab('home')">🎬<span class="nav-text">Shorts</span></div>
             <div class="nav-item plus-btn" onclick="openStudio()">⊕</div>
-            <div class="nav-item">📺<span class="nav-text">Subs</span></div>
-            <div class="nav-item" onclick="alert('Profile: @'+userHandle+'\nRecovery Key: '+recoveryKey)">👤<span class="nav-text">You</span></div>
+            <div class="nav-item" onclick="switchTab('subs')">📺<span class="nav-text">Subs</span></div>
+            <div class="nav-item" onclick="switchTab('you')">👤<span class="nav-text">You</span></div>
         </nav>
     </div>
 
@@ -98,10 +102,13 @@
         </div>
         <div id="media-preview-container" style="display:none; margin-top:10px; position:relative; border-radius:10px; overflow:hidden;"></div>
 
-        <div id="poll-inputs" style="margin-top:20px; border-top:1px dashed #333; padding-top:15px;">
+        <div id="poll-inputs" style="margin-top:20px; border-top:1px dashed #333; padding-top:15px; overflow-y:auto; max-height:200px;">
             <p style="margin:0 0 10px 0; color:var(--gray); font-size:13px;">Add a Poll (Optional)</p>
-            <input type="text" class="auth-input poll-opt-in" placeholder="Option 1">
-            <input type="text" class="auth-input poll-opt-in" placeholder="Option 2">
+            <div id="dynamic-poll-options">
+                <input type="text" class="auth-input poll-opt-in" placeholder="Option 1">
+                <input type="text" class="auth-input poll-opt-in" placeholder="Option 2">
+            </div>
+            <button id="add-poll-btn" onclick="addPollOption()" style="background:#222; color:white; border:1px solid #444; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:12px; margin-top:5px;">+ Add Option</button>
         </div>
     </div>
 
@@ -111,17 +118,45 @@
     </div>
 
     <script>
-        let userHandle = "", userEmoji = "👤", recoveryKey = "";
+        // Data States
+        let userHandle = "", userEmoji = "👤", recoveryKey = "", isSubscribed = false;
         let allPosts = [], openComms = [], openReps = []; 
-        let networkList = []; // Stores objects: { handle, emoji, type: 'friend'|'sub' }
-        let currentMedia = null; // Fix for media upload
+        let networkList = []; 
+        let currentMedia = null;
+        let currentTab = 'home'; 
 
-        const grid = document.getElementById('emoji-grid');
-        for(let i=128512; i<129512; i++){
-            let s = document.createElement('span'); s.innerHTML = `&#${i};`;
-            s.style.cursor = 'pointer';
-            s.onclick = function(){ Array.from(grid.children).forEach(c=>c.style.background='none'); this.style.background='var(--pigeon)'; userEmoji=this.innerHTML; };
-            grid.appendChild(s);
+        // Initialize App
+        function initApp() {
+            populateEmojis();
+            allPosts.push({ id: 1, user: "PigeonTeam", emoji: "🕊️", text: "Welcome to Pigeon Pro! Try playing the Flappy game by clicking the logo.", likes: 100, dislikes: 0, comments: [] });
+            allPosts.push({ id: 2, user: "NewsBot", emoji: "🤖", text: "Breaking: Developer completes the final update. Sleep is incoming.", likes: 45, dislikes: 2, comments: [] });
+            allPosts.push({ id: 3, user: "TestUser", emoji: "😎", text: "If you subscribe to me, I appear in your Subs tab!", likes: 5, dislikes: 0, comments: [] });
+            allPosts.push({ id: 4, user: "Gamer99", emoji: "🎮", text: "Dodging pipes like a pro right now.", likes: 20, dislikes: 0, comments: [] });
+
+            const savedUser = localStorage.getItem('pigeon_handle');
+            if (savedUser) {
+                userHandle = savedUser;
+                userEmoji = localStorage.getItem('pigeon_emoji') || "👤";
+                recoveryKey = localStorage.getItem('pigeon_key') || "";
+                isSubscribed = localStorage.getItem('pigeon_sub') === 'true';
+                if(localStorage.getItem('pigeon_network')) {
+                    networkList = JSON.parse(localStorage.getItem('pigeon_network'));
+                }
+                
+                document.getElementById('id-gate').style.display = 'none';
+                document.getElementById('main-ui').style.display = 'block';
+                renderFeed();
+            }
+        }
+
+        function populateEmojis() {
+            const grid = document.getElementById('emoji-grid');
+            for(let i=128512; i<129512; i++){
+                let s = document.createElement('span'); s.innerHTML = `&#${i};`;
+                s.style.cursor = 'pointer';
+                s.onclick = function(){ Array.from(grid.children).forEach(c=>c.style.background='none'); this.style.background='var(--pigeon)'; userEmoji=this.innerHTML; };
+                grid.appendChild(s);
+            }
         }
 
         function register() {
@@ -132,10 +167,30 @@
             document.getElementById('recovery-display').style.display = "block";
             document.getElementById('main-auth-btn').innerText = "ENTER PIGEON";
             document.getElementById('main-auth-btn').onclick = () => {
+                localStorage.setItem('pigeon_handle', userHandle);
+                localStorage.setItem('pigeon_emoji', userEmoji);
+                localStorage.setItem('pigeon_key', recoveryKey);
+                localStorage.setItem('pigeon_sub', 'false');
+
                 document.getElementById('id-gate').style.display = 'none';
                 document.getElementById('main-ui').style.display = 'block';
                 renderFeed(); 
             };
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+
+        function unlockSubGate() {
+            isSubscribed = true;
+            localStorage.setItem('pigeon_sub', 'true');
+            alert("Timeline Unlocked!");
+            renderFeed();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            renderFeed();
+            window.scrollTo(0,0);
         }
 
         // --- DRAWER & NETWORK SYSTEM ---
@@ -150,6 +205,7 @@
             let exists = networkList.find(n => n.handle === handle && n.type === type);
             if(!exists) {
                 networkList.push({ handle, emoji, type });
+                localStorage.setItem('pigeon_network', JSON.stringify(networkList)); 
                 alert(`Added ${handle} to your ${type === 'friend' ? 'Friends' : 'Subscriptions'}!`);
             } else {
                 alert(`Already ${type === 'friend' ? 'friends with' : 'subscribed to'} ${handle}`);
@@ -159,10 +215,10 @@
         function renderDrawerList() {
             const query = document.getElementById('drawer-search').value.toLowerCase();
             const container = document.getElementById('drawer-list-container');
-            const filtered = networkList.filter(n => n.handle.toLowerCase().includes(query));
+            const filtered = networkList.filter(n => n.type === 'friend' && n.handle.toLowerCase().includes(query));
             
             if(filtered.length === 0) {
-                container.innerHTML = "<p style='color:var(--gray); font-size:12px;'>No connections found.</p>";
+                container.innerHTML = "<p style='color:var(--gray); font-size:12px;'>No friends found. Add some!</p>";
                 return;
             }
             
@@ -170,14 +226,13 @@
                 <div class="list-item">
                     <div class="mini-avatar" style="width:30px; height:30px; font-size:16px;">${n.emoji}</div>
                     <div style="flex:1;">
-                        <b style="font-size:14px;">@${n.handle}</b><br>
-                        <span style="font-size:10px; color:${n.type==='friend' ? 'var(--pigeon)' : 'gold'};">${n.type.toUpperCase()}</span>
+                        <b style="font-size:14px;">@${n.handle}</b>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- STUDIO & MEDIA BUG FIX ---
+        // --- STUDIO & MEDIA ---
         function openStudio() { document.getElementById('studio').style.display = 'flex'; }
         function closeStudio() { document.getElementById('studio').style.display = 'none'; }
         
@@ -197,85 +252,148 @@
             reader.readAsDataURL(file);
         }
 
+        function addPollOption() {
+            const container = document.getElementById('dynamic-poll-options');
+            const currentCount = container.children.length;
+            if (currentCount >= 10) return; // limit reached
+            
+            let newInput = document.createElement('input');
+            newInput.type = "text";
+            newInput.className = "auth-input poll-opt-in";
+            newInput.placeholder = "Option " + (currentCount + 1);
+            container.appendChild(newInput);
+
+            if (currentCount + 1 >= 10) {
+                document.getElementById('add-poll-btn').style.display = 'none';
+            }
+        }
+
         function postNow() {
             const opts = Array.from(document.querySelectorAll('.poll-opt-in')).map(i => ({ text: i.value, votes: 0, voters: [] })).filter(o => o.text);
             allPosts.unshift({ 
                 id: Date.now(), user: userHandle, emoji: userEmoji, 
                 text: document.getElementById('post-text').value, 
-                media: currentMedia, // Media attached here
+                media: currentMedia, 
                 poll: opts.length > 0 ? opts : null, 
                 likes: 0, dislikes: 0, comments: [] 
             });
+            
             // Reset Studio
             document.getElementById('post-text').value = ""; 
-            document.querySelectorAll('.poll-opt-in').forEach(i => i.value = ""); 
+            document.getElementById('dynamic-poll-options').innerHTML = `
+                <input type="text" class="auth-input poll-opt-in" placeholder="Option 1">
+                <input type="text" class="auth-input poll-opt-in" placeholder="Option 2">
+            `;
+            document.getElementById('add-poll-btn').style.display = 'inline-block';
+            
             currentMedia = null;
             document.getElementById('media-preview-container').style.display = 'none';
             document.getElementById('media-upload').value = "";
-            renderFeed(); closeStudio();
+            switchTab('home'); 
+            closeStudio();
         }
 
         function toggle(type, id) { let arr = type === 'C' ? openComms : openReps; if(arr.includes(id)) arr.splice(arr.indexOf(id), 1); else arr.push(id); renderFeed(); }
 
         function renderFeed() {
-            if(allPosts.length === 0) return document.getElementById('feed').innerHTML = "<p style='text-align:center; padding:20px; color:var(--gray);'>Feed is empty. Click ⊕ to post!</p>";
+            let feedBox = document.getElementById('feed');
+            let feedHTML = "";
+            let postsToRender = [];
 
-            document.getElementById('feed').innerHTML = allPosts.map(post => `
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="mini-avatar" style="width:35px; height:35px; font-size:20px;">${post.emoji}</div>
-                            <b>@${post.user}</b>
-                        </div>
-                        <div style="display:flex; gap:5px;">
-                            <button class="btn-small" onclick="addNetwork('${post.user}', '${post.emoji}', 'friend')">+ Friend</button>
-                            <button class="btn-small" style="color:gold; border-color:gold;" onclick="addNetwork('${post.user}', '${post.emoji}', 'sub')">★ Sub</button>
-                        </div>
-                    </div>
-                    <p style="margin:5px 0 10px 0;">${post.text}</p>
-                    
-                    ${post.media ? (post.media.type === 'video' 
-                        ? `<video src="${post.media.src}" class="card-media" controls></video>` 
-                        : `<img src="${post.media.src}" class="card-media">`) : ''}
-
-                    ${post.poll ? `
-                    <div class="poll-v">
-                        ${post.poll.map((opt, i) => {
-                            const total = post.poll.reduce((a, b) => a + b.votes, 0);
-                            const pct = total === 0 ? 0 : Math.round((opt.votes / total) * 100);
-                            return `
-                                <div class="poll-opt" onclick="castVote(${post.id}, ${i})">
-                                    <div class="poll-fill" style="width:${pct}%"></div>
-                                    <span style="position:relative">${opt.voters.includes(userHandle) ? '●' : '○'} ${opt.text}</span>
-                                    <span style="position:relative">${pct}%</span>
-                                </div>`;
-                        }).join('')}
-                    </div>` : ''}
-
-                    <div class="action-bar">
-                        <span onclick="actP(${post.id}, 'L')">👍 ${post.likes}</span>
-                        <span onclick="actP(${post.id}, 'D')">👎 ${post.dislikes}</span>
-                        <span onclick="toggle('C', ${post.id})">💬 ${post.comments.length}</span>
-                    </div>
-
-                    <div style="display: ${openComms.includes(post.id) ? 'block' : 'none'}; margin-top:10px; padding-left:10px; border-left:2px solid #333;">
-                        ${post.comments.map(c => `
-                            <div style="margin-top:12px;">
-                                <div style="display:flex; gap:8px; align-items:center;">
-                                    <div class="mini-avatar" style="width:20px; height:20px; font-size:12px;">${c.emoji}</div>
-                                    <span style="font-size:13px;"><b>@${c.user}</b>: ${c.text}</span>
-                                </div>
-                                <div style="display: ${openReps.includes(c.id) ? 'block' : 'none'}; margin-left:28px; margin-top:5px; border-left:1px dashed #444; padding-left:10px;">
-                                    ${c.replies.map(r => `<div style="margin-top:6px; display:flex; gap:6px; align-items:center;"><div class="mini-avatar" style="width:16px; height:16px; font-size:10px;">${r.emoji}</div><span style="font-size:12px; color:#ddd;"><b>@${r.user}</b>: ${r.text}</span></div>`).join('')}
-                                    <input type="text" class="c-input" style="padding:5px; font-size:11px;" placeholder="Reply... (Enter)" onkeydown="if(event.key==='Enter') addReply(${post.id}, ${c.id}, this)">
-                                </div>
-                                <span onclick="toggle('R', ${c.id})" style="font-size:11px; cursor:pointer; color:var(--pigeon); margin-left:28px;">Reply</span>
-                            </div>
-                        `).join('')}
-                        <input type="text" class="c-input" placeholder="Add a comment... (Enter)" onkeydown="if(event.key==='Enter') addComm(${post.id}, this)">
+            if (currentTab === 'you') {
+                feedHTML += `
+                <div style="padding:30px 20px; text-align:center; border-bottom:8px solid #222; background:linear-gradient(180deg, #111, #000);">
+                    <div style="font-size:50px; background:#222; border-radius:50%; width:90px; height:90px; margin:0 auto 10px auto; display:flex; align-items:center; justify-content:center;">${userEmoji}</div>
+                    <h2 style="margin:0;">@${userHandle}</h2>
+                    <p style="color:var(--gray); margin:5px 0;">0 Subscribers</p>
+                    <div style="background:#1a1a1a; padding:10px; border-radius:8px; display:inline-block; margin-top:10px; font-size:12px; border:1px dashed var(--pigeon);">
+                        <span style="color:var(--pigeon)">Recovery Key:</span> ${recoveryKey}
                     </div>
                 </div>
-            `).join('');
+                <h3 style="padding:15px; margin:0; border-bottom:1px solid #333;">Your Posts</h3>`;
+                postsToRender = allPosts.filter(p => p.user === userHandle);
+            } 
+            else if (currentTab === 'subs') {
+                feedHTML += `<h3 style="padding:15px; margin:0; border-bottom:1px solid #333; color:gold;">★ Your Subscriptions</h3>`;
+                let subbedHandles = networkList.filter(n => n.type === 'sub').map(n => n.handle);
+                postsToRender = allPosts.filter(p => subbedHandles.includes(p.user));
+            } 
+            else {
+                postsToRender = allPosts;
+            }
+
+            if(postsToRender.length === 0) {
+                feedHTML += `<p style='text-align:center; padding:40px 20px; color:var(--gray);'>Nothing to see here yet!</p>`;
+            } else {
+                postsToRender.forEach((post, index) => {
+                    feedHTML += `
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="mini-avatar" style="width:35px; height:35px; font-size:20px;">${post.emoji}</div>
+                                <b>@${post.user}</b>
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                ${post.user !== userHandle ? `<button class="btn-small" onclick="addNetwork('${post.user}', '${post.emoji}', 'friend')">+ Friend</button>` : ''}
+                                ${post.user !== userHandle ? `<button class="btn-small" style="color:gold; border-color:gold;" onclick="addNetwork('${post.user}', '${post.emoji}', 'sub')">★ Sub</button>` : ''}
+                            </div>
+                        </div>
+                        <p style="margin:5px 0 10px 0;">${post.text}</p>
+                        
+                        ${post.media ? (post.media.type === 'video' 
+                            ? `<video src="${post.media.src}" class="card-media" controls></video>` 
+                            : `<img src="${post.media.src}" class="card-media">`) : ''}
+
+                        ${post.poll ? `
+                        <div class="poll-v">
+                            ${post.poll.map((opt, i) => {
+                                const total = post.poll.reduce((a, b) => a + b.votes, 0);
+                                const pct = total === 0 ? 0 : Math.round((opt.votes / total) * 100);
+                                return `
+                                    <div class="poll-opt" onclick="castVote(${post.id}, ${i})">
+                                        <div class="poll-fill" style="width:${pct}%"></div>
+                                        <span style="position:relative">${opt.voters.includes(userHandle) ? '●' : '○'} ${opt.text}</span>
+                                        <span style="position:relative">${opt.votes} votes (${pct}%)</span>
+                                    </div>`;
+                            }).join('')}
+                        </div>` : ''}
+
+                        <div class="action-bar">
+                            <span onclick="actP(${post.id}, 'L')">👍 ${post.likes}</span>
+                            <span onclick="actP(${post.id}, 'D')">👎 ${post.dislikes}</span>
+                            <span onclick="toggle('C', ${post.id})">💬 ${post.comments.length}</span>
+                        </div>
+
+                        <div style="display: ${openComms.includes(post.id) ? 'block' : 'none'}; margin-top:10px; padding-left:10px; border-left:2px solid #333;">
+                            ${post.comments.map(c => `
+                                <div style="margin-top:12px;">
+                                    <div style="display:flex; gap:8px; align-items:center;">
+                                        <div class="mini-avatar" style="width:20px; height:20px; font-size:12px;">${c.emoji}</div>
+                                        <span style="font-size:13px;"><b>@${c.user}</b>: ${c.text}</span>
+                                    </div>
+                                    <div style="display: ${openReps.includes(c.id) ? 'block' : 'none'}; margin-left:28px; margin-top:5px; border-left:1px dashed #444; padding-left:10px;">
+                                        ${(c.replies||[]).map(r => `<div style="margin-top:6px; display:flex; gap:6px; align-items:center;"><div class="mini-avatar" style="width:16px; height:16px; font-size:10px;">${r.emoji}</div><span style="font-size:12px; color:#ddd;"><b>@${r.user}</b>: ${r.text}</span></div>`).join('')}
+                                        <input type="text" class="c-input" style="padding:5px; font-size:11px;" placeholder="Reply... (Enter)" onkeydown="if(event.key==='Enter') addReply(${post.id}, ${c.id}, this)">
+                                    </div>
+                                    <span onclick="toggle('R', ${c.id})" style="font-size:11px; cursor:pointer; color:var(--pigeon); margin-left:28px;">Reply</span>
+                                </div>
+                            `).join('')}
+                            <input type="text" class="c-input" placeholder="Add a comment... (Enter)" onkeydown="if(event.key==='Enter') addComm(${post.id}, this)">
+                        </div>
+                    </div>`;
+
+                    if (currentTab === 'home' && !isSubscribed && (index + 1) % 2 === 0) {
+                        feedHTML += `
+                        <div class="card" style="background:linear-gradient(45deg, #1a1a1a, #000); text-align:center; border-bottom: 8px solid var(--pigeon);">
+                            <h3 style="color:var(--pigeon); margin-top:0;">🕊️ Sub Gate</h3>
+                            <p style="font-size:13px; color:var(--gray);">Subscribe to view the rest of the timeline!</p>
+                            <button onclick="unlockSubGate()" style="background:var(--pigeon); color:white; border:none; padding:10px 20px; border-radius:20px; font-weight:bold; cursor:pointer; margin:5px;">Subscribe Free</button>
+                        </div>`;
+                    }
+                });
+            }
+
+            feedBox.innerHTML = feedHTML;
         }
 
         function castVote(pid, idx) {
@@ -292,29 +410,30 @@
         }
         function addReply(pid, cid, el) {
             if(!el.value.trim()) return;
-            allPosts.find(p=>p.id===pid).comments.find(c=>c.id===cid).replies.push({ id: Date.now(), user: userHandle, emoji: userEmoji, text: el.value });
+            let p = allPosts.find(p=>p.id===pid).comments.find(c=>c.id===cid);
+            if(!p.replies) p.replies = [];
+            p.replies.push({ id: Date.now(), user: userHandle, emoji: userEmoji, text: el.value });
             el.value = ""; if(!openReps.includes(cid)) openReps.push(cid); renderFeed();
         }
 
-        // --- FLAPPY PIPES BUG FIX ---
+        // --- FLAPPY PIPES FIXED ---
         let bY = 200, bV = 0, gLoop, score=0, pipes=[], frames=0;
+        
         function initFlappy() {
             document.getElementById('game-overlay').style.display = 'block';
             bY = window.innerHeight / 2; bV = 0; score = 0; pipes = []; frames = 0;
             document.getElementById('game-score').innerText = score;
-            document.querySelectorAll('.pipe').forEach(e => e.remove()); // clear old pipes
+            document.querySelectorAll('.pipe').forEach(e => e.remove()); 
             
-            // Jump handler
             document.getElementById('game-overlay').onclick = () => { bV = -8; };
             gLoop = setInterval(updateFlappy, 30);
         }
 
         function updateFlappy() {
             frames++;
-            bV += 0.5; bY += bV; // Gravity
+            bV += 0.5; bY += bV; 
             document.getElementById('game-bird').style.top = bY + "px";
 
-            // Spawn Pipes (from the right, moving left)
             if (frames % 80 === 0) {
                 const gapY = Math.random() * (window.innerHeight - 300) + 100;
                 const gapSize = 180; 
@@ -322,11 +441,13 @@
                 let pTop = document.createElement('div');
                 pTop.className = 'pipe';
                 pTop.style.top = '0px';
+                pTop.style.left = window.innerWidth + 'px'; 
                 pTop.style.height = (gapY - gapSize/2) + 'px';
                 
                 let pBot = document.createElement('div');
                 pBot.className = 'pipe';
                 pBot.style.top = (gapY + gapSize/2) + 'px';
+                pBot.style.left = window.innerWidth + 'px'; 
                 pBot.style.height = (window.innerHeight - gapY - gapSize/2) + 'px';
 
                 document.getElementById('game-overlay').appendChild(pTop);
@@ -335,13 +456,11 @@
                 pipes.push({ x: window.innerWidth, top: pTop, bot: pBot, passed: false });
             }
 
-            // Move and Check Pipes
             pipes.forEach(p => {
-                p.x -= 5; // Move left
+                p.x -= 5; 
                 p.top.style.left = p.x + 'px';
                 p.bot.style.left = p.x + 'px';
 
-                // Hitbox detection
                 let birdRect = document.getElementById('game-bird').getBoundingClientRect();
                 let tpRect = p.top.getBoundingClientRect();
                 let bpRect = p.bot.getBoundingClientRect();
@@ -351,10 +470,9 @@
                     birdRect.left + 10 < tpRect.right && 
                     (birdRect.top + 10 < tpRect.bottom || birdRect.bottom - 10 > bpRect.top)
                 ) {
-                    stopFlappy(); // Crashed into pipe
+                    stopFlappy();
                 }
 
-                // Score check
                 if (!p.passed && p.x < 50) {
                     p.passed = true;
                     score++;
@@ -362,14 +480,12 @@
                 }
             });
 
-            // Cleanup offscreen pipes
             if (pipes.length > 0 && pipes[0].x < -100) {
                 pipes[0].top.remove();
                 pipes[0].bot.remove();
                 pipes.shift();
             }
 
-            // Floor/Ceiling crash
             if(bY > window.innerHeight || bY < 0) stopFlappy();
         }
 
