@@ -1,868 +1,1713 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pigeon Ultra Pro</title>
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-database.js"></script>
+    <!-- Tailwind CSS for visual premium design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons for layout actions -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></link>
+    
+    <!-- Firebase SDK Compat versions for easy browser integration -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
     <style>
-        :root { --yt-black: #0f0f0f; --yt-border: #272727; --pigeon: #1DA1F2; --text: #ffffff; --gray: #aaaaaa; }
-        * { box-sizing: border-box; font-family: "Roboto", sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--yt-black); color: var(--text); height: 100vh; overflow: hidden; }
-
-        /* --- FRONT SUB GATE --- */
-        #front-sub-gate { position:fixed; inset:0; background:linear-gradient(135deg, #000000, #111111); z-index:15000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; }
-        .lock-icon { font-size: 70px; margin-bottom: 20px; color: gold; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-        .sub-title { font-size:32px; font-weight:900; color:var(--text); margin:0 0 10px 0; }
-        .sub-desc { font-size:14px; color:var(--gray); margin:0 0 30px 0; max-width:300px; line-height:1.5; }
-        .unlock-btn { background:gold; color:#000; border:none; padding:15px 40px; border-radius:25px; font-weight:900; font-size:18px; cursor:pointer; transition:0.3s; text-transform: uppercase; }
-        .unlock-btn:hover { transform:scale(1.05); box-shadow:0 0 25px rgba(255, 215, 0, 0.6); }
-
-        /* --- AUTH SYSTEM --- */
-        .auth-input { padding:12px; width:260px; border-radius:8px; border:1px solid #333; margin-bottom:10px; background:#111; color:white; outline:none; }
-        #recovery-display { display:none; background:#1a1a1a; padding:15px; border-radius:10px; margin-bottom:15px; border:1px dashed var(--pigeon); font-size:12px; width:260px; word-break:break-all; }
-
-        /* --- DRAWER (FRIENDS) --- */
-        #friends-drawer { position: fixed; left: -280px; top: 0; width: 280px; height: 100%; background: #111; z-index: 10001; transition: 0.3s; padding: 20px; border-right: 1px solid #333; overflow-y:auto;}
-        #drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: none; }
-        #drawer-search { width:100%; padding:10px; margin-bottom:15px; background:#222; color:white; border:1px solid #444; border-radius:8px; outline:none; }
-        .list-item { display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid #222; cursor:pointer; border-radius:8px; transition:0.2s; }
-        .list-item:hover { background:#222; }
-
-        /* --- YT BOTTOM BAR --- */
-        nav { height: 50px; border-top: 1px solid var(--yt-border); display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: #000; z-index: 1000; }
-        .nav-item { background: none; border: none; color: white; display: flex; flex-direction: column; align-items: center; font-size: 18px; flex: 1; opacity: 0.9; cursor: pointer; }
-        .nav-text { font-size: 10px; margin-top: 3px; }
-        .plus-btn { font-size: 32px; }
-
-        /* --- CARDS & MEDIA --- */
-        #app { margin-top: 56px; margin-bottom: 50px; height: calc(100vh - 106px); overflow-y: auto; }
-        header { height: 56px; border-bottom: 1px solid var(--yt-border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; position: fixed; top: 0; width: 100%; background: #000; z-index: 1000; }
-        .card { padding: 15px; border-bottom: 8px solid var(--yt-border); }
-        .card-media { width: 100%; border-radius: 10px; margin-top: 10px; border:1px solid #333; max-height:300px; object-fit:contain; }
-        .action-bar { display: flex; gap: 20px; margin-top: 15px; color: var(--gray); font-size: 13px; cursor: pointer; }
-        .btn-small { background:#222; color:white; border:1px solid #444; padding:3px 8px; border-radius:12px; font-size:11px; cursor:pointer; transition:0.2s; }
-        .btn-small:hover { background:var(--pigeon); border-color:var(--pigeon); }
-        
-        .poll-v { margin-top: 10px; }
-        .poll-opt { background: #1a1a1a; padding: 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #333; position: relative; overflow: hidden; display: flex; justify-content: space-between; cursor: pointer; }
-        .poll-fill { position: absolute; left: 0; top: 0; height: 100%; background: rgba(29, 161, 242, 0.2); transition: 0.4s ease; pointer-events: none; }
-        
-        .c-input { width:100%; background:#111; color:white; border:1px solid #333; padding:8px; border-radius:5px; margin-top:10px; outline:none; }
-        .mini-avatar { background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        
-        /* --- STUDIO --- */
-        #studio { position:fixed; inset:0; background:#000; z-index:9000; display:none; flex-direction:column; padding:20px; }
-        .studio-toolbar { display:flex; gap:10px; margin-top:15px; }
-        .icon-btn { background:#222; color:white; border:1px solid #444; padding:10px 12px; border-radius:8px; cursor:pointer; font-size:18px; transition:0.2s; }
-        .icon-btn:hover { background:#333; }
-        
-        .poll-option-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-        .poll-option-row input { flex:1; padding:8px; background:#111; color:white; border:1px solid #333; border-radius:5px; outline:none; font-size:12px; }
-        .remove-poll-btn { background:#c62828; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px; }
-
-        /* --- CHAT SYSTEM --- */
-        #chat-view { position:fixed; inset:0; background:#000; z-index:9500; display:none; flex-direction:column; }
-        .chat-header { height:56px; border-bottom:1px solid #333; display:flex; align-items:center; gap:10px; padding:0 16px; }
-        .chat-messages { flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px; }
-        .message { display:flex; gap:8px; margin-bottom:8px; align-items:flex-end; }
-        .message.own { flex-direction:row-reverse; }
-        .message-bubble { background:#1a1a1a; padding:10px 12px; border-radius:12px; max-width:70%; word-wrap:break-word; font-size:13px; }
-        .message.own .message-bubble { background:var(--pigeon); color:#000; }
-        .chat-input-area { border-top:1px solid #333; padding:12px 16px; display:flex; gap:10px; align-items:flex-end; }
-        .chat-input-area input { flex:1; background:#111; color:white; border:1px solid #333; padding:10px; border-radius:20px; outline:none; font-size:13px; }
-        .chat-send-btn { background:var(--pigeon); border:none; color:white; padding:8px 15px; border-radius:20px; cursor:pointer; font-weight:bold; }
-
-        /* --- GAME --- */
-        #game-overlay { display:none; position:fixed; inset:0; background: #4ec0ca; z-index: 20000; overflow:hidden; }
-        #game-bird { position: absolute; font-size: 35px; left: 50px; user-select: none; z-index:20002; }
-        .pipe { position: absolute; width: 60px; background: #73bf2e; border: 3px solid #558a22; z-index:20001; }
-
-        /* --- LOADING --- */
-        .loading { display:flex; align-items:center; justify-content:center; height:100%; color:var(--gray); }
-
-        /* --- SPLASH SCREEN --- */
-        #splash-screen { position:fixed; inset:0; background:linear-gradient(135deg, #0f0f0f, #1a1a1a); z-index:11000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; }
-        .splash-logo { font-size:80px; margin-bottom:20px; animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        .splash-title { font-size:36px; font-weight:900; color:var(--pigeon); margin:0 0 10px 0; }
-        .splash-subtitle { font-size:16px; color:var(--gray); margin:0 0 30px 0; max-width:300px; line-height:1.5; }
-        .splash-features { display:flex; flex-direction:column; gap:15px; margin:30px 0; max-width:300px; }
-        .feature-item { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--text); }
-        .feature-icon { font-size:24px; }
-        .splash-btn { background:var(--pigeon); color:#000; border:none; padding:14px 40px; border-radius:25px; font-weight:bold; font-size:16px; cursor:pointer; margin-top:20px; transition:0.3s; }
-        .splash-btn:hover { transform:scale(1.05); box-shadow:0 0 20px rgba(29, 161, 242, 0.5); }
-        .splash-terms { font-size:11px; color:var(--gray); margin-top:20px; max-width:300px; }
+        :root {
+            --yt-black: #050505;
+            --yt-border: #1f1f1f;
+            --pigeon: #1DA1F2;
+        }
+        body {
+            background-color: var(--yt-black);
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+        /* Custom scrollbar adjustments */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #222;
+            border-radius: 99px;
+        }
+        /* Custom ruler styling */
+        .ruler-container {
+            position: relative;
+            background: repeating-linear-gradient(
+                90deg,
+                #3f3f46,
+                #3f3f46 2px,
+                transparent 2px,
+                transparent 10px
+            );
+            height: 16px;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body onload="initApp()">
+<body class="flex flex-col h-screen select-none">
 
-    <div id="front-sub-gate" style="display:none;">
-        <div class="lock-icon">🔒</div>
-        <h1 class="sub-title">Pigeon Premium</h1>
-        <p class="sub-desc">Subscribe to unlock access to Pigeon Ultra Pro. Connect with friends, share media, and secure your chats.</p>
-        <button class="unlock-btn" onclick="unlockSubGate()">Unlock Pigeon</button>
+    <!-- ================= CUSTOM TOAST ALERTS ================= -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[99999] pointer-events-none flex flex-col gap-2"></div>
+
+    <!-- ================= 1. LIAR SCREEN ================= -->
+    <div id="liar-screen" class="fixed inset-0 bg-white text-black z-[99999] hidden flex flex-col items-center justify-center">
+        <span class="text-9xl mb-4 animate-bounce">🤥</span>
+        <h1 class="text-7xl md:text-9xl font-black tracking-widest text-center">LIAR!</h1>
     </div>
 
-    <div id="splash-screen" style="display:none;">
-        <div class="splash-logo">🕊️</div>
-        <h1 class="splash-title">PIGEON</h1>
-        <p class="splash-subtitle">Your Voice. Your Community. Your Control.</p>
-        
-        <div class="splash-features">
-            <div class="feature-item">
-                <span class="feature-icon">💬</span>
-                <span>Share thoughts with your community</span>
+    <!-- ================= 1st. SUB GATE ================= -->
+    <div id="sub-gate" class="fixed inset-0 bg-black z-[50000] flex flex-col items-center justify-center p-6 text-center">
+        <div class="bg-zinc-900 border border-zinc-850 p-8 rounded-3xl max-w-sm w-full shadow-2xl space-y-6">
+            <div class="text-6xl text-red-500 animate-pulse">🔒</div>
+            <h2 class="text-2xl font-black text-white">Timeline Locked</h2>
+            <p class="text-sm text-zinc-400 font-medium">Please subscribe to the Ultra membership to unlock your profile creation and home timeline feed! 🕊️</p>
+            <div class="space-y-3 pt-4">
+                <button onclick="subscribeToUltra()" class="w-full bg-red-600 hover:bg-red-750 text-white font-bold py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition duration-200">
+                    Subscribe to Ultra <i class="fa-brands fa-youtube text-lg"></i>
+                </button>
+                <button onclick="showLiarScreen()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold py-4 rounded-2xl transition duration-200">
+                    I have subscribed
+                </button>
             </div>
-            <div class="feature-item">
-                <span class="feature-icon">📸</span>
-                <span>Post photos, videos & polls</span>
+        </div>
+    </div>
+
+    <!-- ================= 2nd. SIGN-IN GATE ================= -->
+    <div id="auth-gate" class="fixed inset-0 bg-black z-[40000] hidden flex flex-col items-center justify-center p-6">
+        <div class="bg-zinc-900 border border-zinc-850 p-8 rounded-3xl max-w-sm w-full shadow-2xl space-y-6 text-center relative">
+            <h2 class="text-2xl font-black text-white">Create Profile Account 🕊️</h2>
+            
+            <!-- Avatar Upload Circle -->
+            <div class="relative w-28 h-28 mx-auto group cursor-pointer" onclick="document.getElementById('profile-pic-input').click()">
+                <div class="w-full h-full rounded-full border-4 border-dashed border-zinc-700 overflow-hidden flex items-center justify-center bg-zinc-800 group-hover:border-sky-500 transition duration-200">
+                    <img id="avatar-preview" src="" class="w-full h-full object-cover hidden">
+                    <i id="avatar-plus-icon" class="fa-solid fa-plus text-3xl text-zinc-500 group-hover:text-sky-500 transition duration-200"></i>
+                </div>
             </div>
-            <div class="feature-item">
-                <span class="feature-icon">👥</span>
-                <span>Connect with friends & creators</span>
+            <input type="file" id="profile-pic-input" accept="image/*" class="hidden" onchange="previewAvatar(this)">
+
+            <!-- Credentials inputs -->
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Username (4-16 chars)</label>
+                    <input type="text" id="username-input" class="w-full bg-zinc-950 border border-zinc-800 focus:border-sky-500 text-white rounded-xl p-3 outline-none transition duration-200" placeholder="Username">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Password (5-11 chars)</label>
+                    <input type="password" id="password-input" class="w-full bg-zinc-950 border border-zinc-800 focus:border-sky-500 text-white rounded-xl p-3 outline-none transition duration-200" placeholder="Password">
+                </div>
             </div>
-            <div class="feature-item">
-                <span class="feature-icon">💎</span>
-                <span>Fully private & encrypted chats</span>
+
+            <div class="flex gap-2">
+                <button onclick="closeAuthGate()" id="auth-back-btn" class="hidden flex-1 bg-zinc-850 hover:bg-zinc-800 text-zinc-300 font-bold py-3.5 rounded-2xl transition duration-200">
+                    Cancel
+                </button>
+                <button id="create-acc-btn" onclick="createAccount()" class="flex-1 bg-sky-500 hover:bg-sky-400 text-white font-bold py-3.5 rounded-2xl transition duration-200 shadow-lg shadow-sky-500/25">
+                    Create Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ACCOUNTS SWITCHER DRAWER (TOP HUB) ================= -->
+    <div id="creator-hub-drawer" class="fixed inset-0 bg-black/85 z-[45000] hidden flex items-center justify-center p-4" onclick="closeCreatorHub()">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full space-y-5 text-center relative" onclick="event.stopPropagation()">
+            <button onclick="closeCreatorHub()" class="absolute top-4 right-4 text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            
+            <h3 class="font-extrabold text-lg text-white">Switch Accounts</h3>
+            <div class="flex items-center justify-center gap-3">
+                <div class="w-12 h-12 rounded-full overflow-hidden bg-zinc-800 border border-sky-500">
+                    <img id="hub-avatar" src="" class="w-full h-full object-cover">
+                </div>
+                <div class="text-left">
+                    <h4 id="hub-username" class="font-bold text-sm text-white">username</h4>
+                    <p class="text-xs text-zinc-400"><span id="hub-sub-count">0</span> Subscribers</p>
+                </div>
+            </div>
+
+            <!-- Horizontal Profiles Switch panel layout inside Top Hub -->
+            <div class="space-y-3 pt-3 border-t border-zinc-800">
+                <span class="text-xs font-bold text-zinc-400 uppercase tracking-wide block text-left">Your Created Accounts</span>
+                <div id="top-hub-accounts-grid" class="flex gap-3 overflow-x-auto py-1">
+                    <!-- Switchable accounts inside -->
+                </div>
+            </div>
+
+            <!-- Milestone Multi-Account Slots Activation Card -->
+            <div class="bg-zinc-950 p-4 rounded-2xl border border-zinc-855 flex items-center justify-between text-left">
+                <div>
+                    <h5 class="text-xs font-extrabold text-white">Unlock Creator Slot</h5>
+                    <p id="hub-slot-requirement-text" class="text-[10px] text-zinc-400 mt-0.5">100 subscribers required</p>
+                </div>
+                <button id="hub-unlock-btn" onclick="triggerMilestoneProfileCreation()" class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-md">
+                    <i id="hub-unlock-icon" class="fa-solid fa-lock text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TOP BAR NAVIGATION ================= -->
+    <header class="h-14 border-b border-zinc-800 flex items-center justify-between px-4 sticky top-0 bg-black z-30">
+        <!-- Sidebar and Logo block -->
+        <div class="flex items-center gap-3">
+            <button onclick="openSidebar()" class="text-zinc-400 hover:text-white p-1 text-lg">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <span onclick="launchFlappyPigeon()" class="text-2xl cursor-pointer hover:scale-110 active:scale-95 transition-all">🕊️</span>
+            <span class="font-extrabold text-lg tracking-tight select-none">Pigeon</span>
+        </div>
+
+        <!-- Tapping opens Switchboard Drawer -->
+        <div onclick="openCreatorHub()" class="flex items-center gap-2 cursor-pointer bg-zinc-900/80 hover:bg-zinc-850 px-3 py-1 rounded-full border border-zinc-800 transition duration-150">
+            <span class="text-xs font-semibold text-zinc-300">You</span>
+            <div class="w-6 h-6 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700">
+                <img id="header-avatar" src="" class="w-full h-full object-cover">
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= SIDEBAR CHAT MATRIX ================= -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/75 z-40 hidden" onclick="closeSidebar()"></div>
+    <div id="sidebar" class="fixed top-0 left-0 bottom-0 w-80 bg-zinc-950 border-r border-zinc-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
+            <h3 class="font-bold text-lg text-sky-400">Pigeon Chat Matrix</h3>
+            <button onclick="closeSidebar()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <!-- Search Friends in Matrix -->
+        <div class="p-3">
+            <div class="bg-zinc-900 flex items-center px-3 py-2 rounded-xl border border-zinc-800">
+                <i class="fa-solid fa-magnifying-glass text-zinc-500 mr-2"></i>
+                <input type="text" id="sidebar-search" placeholder="Search friends to chat..." oninput="filterFriendsList()" class="bg-transparent border-none outline-none text-xs w-full text-white placeholder-zinc-500">
             </div>
         </div>
 
-        <button class="splash-btn" onclick="showAuthGate()">Get Started</button>
-        
-        <p class="splash-terms">
-            🔒 Your data is yours. No algorithms. No ads. No tracking.
-        </p>
-    </div>
-
-    <div id="drawer-overlay" onclick="toggleDrawer(false)"></div>
-    <div id="friends-drawer">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2 style="color:var(--pigeon); margin:0;">Friends</h2>
-            <span onclick="toggleDrawer(false)" style="font-size:24px; cursor:pointer; font-weight:bold;">✕</span>
+        <!-- Friends List -->
+        <div id="friends-list" class="flex-1 overflow-y-auto px-3 space-y-1">
+            <!-- Dynamic friends inside -->
         </div>
-        <input type="text" id="drawer-search" placeholder="Search friends..." onkeyup="renderDrawerList()">
-        <div id="drawer-list-container"></div>
-        <button onclick="logout()" style="width:100%; margin-top:20px; padding:10px; background:#c62828; color:white; border:none; border-radius:8px; cursor:pointer;">Logout</button>
     </div>
 
-    <div id="id-gate" style="position:fixed; inset:0; background:#000; z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; padding: 20px;">
-        <h1 style="color:var(--pigeon); font-size:40px; margin:0;">🕊️</h1>
-        <h2 style="font-size:18px; margin-bottom:20px;">Join Pigeon</h2>
-        <input type="text" id="u-name" class="auth-input" placeholder="Handle (5-20)">
-        <input type="password" id="u-pass" class="auth-input" placeholder="Password">
-        <div id="recovery-display"><b style="color:var(--pigeon)">RECOVERY KEY:</b><br><span id="key-text"></span></div>
-        <p style="font-size:12px; color:var(--gray); margin:0 0 5px 0;">Pick your Avatar:</p>
-        <div id="emoji-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; height:120px; width:260px; overflow-y:auto; margin-bottom:15px; background:#111; padding:10px; border-radius:10px;"></div>
-        <button id="main-auth-btn" onclick="register()" style="background:var(--pigeon); color:white; border:none; padding:12px 60px; border-radius:25px; font-weight:bold; cursor:pointer;">CREATE ACCOUNT</button>
+    <!-- ================= ACTIVE WHATSAPP CHAT CONTAINER ================= -->
+    <div id="chat-box" class="fixed inset-0 bg-black z-50 hidden flex-col">
+        <!-- Header -->
+        <div class="h-14 border-b border-zinc-800 bg-zinc-900 flex items-center px-4 justify-between">
+            <div class="flex items-center gap-3">
+                <button onclick="closeChat()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+                <div class="w-9 h-9 rounded-full overflow-hidden bg-zinc-800">
+                    <img id="chat-avatar" src="" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h4 id="chat-user-title" class="font-bold text-sm">Username</h4>
+                    <span class="text-[9px] text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-lock text-[8px]"></i> End-to-End Encrypted</span>
+                </div>
+            </div>
+        </div>
+        <!-- Messages Area -->
+        <div id="chat-logs" class="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-950/40"></div>
+        <!-- Input Field -->
+        <div class="p-3 bg-zinc-900 border-t border-zinc-800 flex items-center gap-2">
+            <input type="text" id="chat-input" placeholder="Type a secure message..." class="flex-1 bg-zinc-950 text-white rounded-xl py-3 px-4 outline-none text-sm border border-zinc-800 focus:border-sky-500 transition duration-150">
+            <button onclick="sendChatMessage()" class="w-10 h-10 bg-sky-500 hover:bg-sky-400 rounded-xl flex items-center justify-center text-white"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
     </div>
 
-    <div id="main-ui" style="display:none">
-        <header>
-            <div onclick="toggleDrawer(true)" style="font-size:24px; cursor:pointer;">☰</div>
-            <div onclick="initFlappy()" style="font-weight:900; font-size:20px; color:var(--pigeon); cursor:pointer;">🕊️ PIGEON</div>
-            <div style="font-size:18px; cursor:pointer;" onclick="switchTab('home')">🔍</div>
+    <!-- ================= CORE CONTAINER INTERFACE ================= -->
+    <main id="app-window" class="flex-1 overflow-y-auto pb-20">
+        <!-- Tabs Target Container Viewports -->
+        <div id="home-viewport" class="p-4 space-y-4">
+            <!-- Posts Stream Container -->
+            <div id="posts-stream" class="space-y-4"></div>
+        </div>
+
+        <div id="shorts-viewport" class="p-4 space-y-4 hidden">
+            <!-- Shorts Container -->
+            <div id="shorts-stream" class="space-y-4"></div>
+        </div>
+
+        <div id="subs-viewport" class="p-4 hidden space-y-4">
+            <h3 class="font-extrabold text-xl text-zinc-200 border-b border-zinc-800 pb-3">★ Your Subscriptions</h3>
+            <div id="subscribed-list" class="flex gap-3 overflow-x-auto py-2"></div>
+            <div id="subs-stream" class="space-y-4 pt-2"></div>
+        </div>
+
+        <!-- Cleaned "You" Viewport tab containing stats, name, and post categories (All, Shorts) -->
+        <div id="you-viewport" class="p-4 hidden space-y-6">
+            <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl text-center space-y-4 relative">
+                <div class="w-24 h-24 rounded-full overflow-hidden mx-auto border-4 border-sky-500/20 shadow-xl">
+                    <img id="you-profile-avatar" src="" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h2 id="you-profile-name" class="text-xl font-extrabold">username</h2>
+                    <p class="text-xs text-zinc-500 mt-1">Status Level Matrix</p>
+                </div>
+
+                <!-- Stats Counters -->
+                <div class="grid grid-cols-3 gap-2 border-t border-b border-zinc-800 py-3 text-center">
+                    <div>
+                        <span id="you-friends-count" class="block font-black text-lg text-sky-400">0</span>
+                        <span class="text-[10px] text-zinc-500 uppercase font-bold">Friends</span>
+                    </div>
+                    <div>
+                        <span id="you-subs-count" class="block font-black text-lg text-emerald-400">0</span>
+                        <span class="text-[10px] text-zinc-500 uppercase font-bold">Subs</span>
+                    </div>
+                    <div>
+                        <span id="you-posts-count" class="block font-black text-lg text-amber-400">0</span>
+                        <span class="text-[10px] text-zinc-500 uppercase font-bold">Posts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Posts Segment with Tabs Filters (All, Shorts) -->
+            <div class="space-y-4">
+                <div class="flex border-b border-zinc-800">
+                    <button id="tab-all-trigger" onclick="filterProfileView('all')" class="flex-1 py-3 text-center font-bold text-sm border-b-2 border-sky-500 text-sky-400">All</button>
+                    <button id="tab-shorts-trigger" onclick="filterProfileView('shorts')" class="flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-zinc-500 hover:text-zinc-300">Shorts</button>
+                </div>
+                <div id="profile-posts-stream" class="space-y-4"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= POST CREATION MODAL ================= -->
+    <div id="post-modal" class="fixed inset-0 bg-black z-50 hidden flex-col">
+        <header class="h-14 border-b border-zinc-800 flex items-center justify-between px-4 bg-zinc-950">
+            <button onclick="closePostModal()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h2 class="font-bold text-sm tracking-tight text-zinc-200">New Creation Vector</h2>
+            <button id="publish-btn" onclick="publishFeedPost()" class="bg-sky-500 text-white font-bold px-5 py-1.5 rounded-full text-xs transition duration-150">Publish</button>
         </header>
 
-        <main id="app"><div id="feed" class="loading">Loading posts...</div></main>
-        
-        <nav>
-            <div class="nav-item" onclick="switchTab('home')">🏠<span class="nav-text">Home</span></div>
-            <div class="nav-item" onclick="switchTab('home')">🎬<span class="nav-text">Shorts</span></div>
-            <div class="nav-item plus-btn" onclick="openStudio()">⊕</div>
-            <div class="nav-item" onclick="switchTab('subs')">📺<span class="nav-text">Subs</span></div>
-            <div class="nav-item" onclick="switchTab('you')">👤<span class="nav-text">You</span></div>
-        </nav>
-    </div>
+        <div class="p-4 flex-1 flex flex-col space-y-4 overflow-y-auto">
+            <!-- Text content editor -->
+            <textarea id="post-input" placeholder="Type what's currently happening..." class="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white placeholder-zinc-500 outline-none h-32 resize-none focus:border-sky-500 transition duration-150 text-sm"></textarea>
+            
+            <div class="flex flex-col gap-4">
+                <!-- Selector Options Buttons row grid -->
+                <div class="flex gap-3">
+                    <button onclick="activateDynamicPollOptionGroup()" class="flex-1 bg-zinc-900 hover:bg-zinc-850 p-3 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-square-poll-vertical text-sky-400"></i> Voting Poll
+                    </button>
+                    <button onclick="document.getElementById('post-media-input').click()" class="flex-1 bg-zinc-900 hover:bg-zinc-850 p-3 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-photo-film text-emerald-400"></i> Media
+                    </button>
+                </div>
 
-    <div id="studio">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span onclick="closeStudio()" style="font-size:24px; cursor:pointer;">✕</span>
-            <button onclick="postNow()" style="background:var(--pigeon); color:white; border:none; border-radius:20px; padding:8px 20px; font-weight:bold; cursor:pointer;">Post</button>
-        </div>
-        <textarea id="post-text" placeholder="What's happening?" style="width:100%; height:80px; background:none; border:none; color:white; font-size:16px; margin-top:15px; outline:none; resize:none;"></textarea>
-        <div style="font-size:12px; color:var(--gray); margin-top:5px;"><span id="char-count">0</span>/280</div>
-        
-        <div class="studio-toolbar">
-            <div class="icon-btn" onclick="togglePollUI()">📊 Poll</div>
-            <div class="icon-btn" onclick="document.getElementById('media-upload').click()">🎬 Media</div>
-        </div>
-        
-        <input type="file" id="media-upload" accept="image/*, video/*" hidden onchange="handleMedia(this)">
-        <div id="media-preview-container" style="display:none; margin-top:10px; position:relative; border-radius:10px; overflow:hidden;">
-            <button onclick="removeMedia()" style="position:absolute; top:5px; right:5px; background:#c62828; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; z-index:10;">✕</button>
-        </div>
+                <input type="file" id="post-media-input" accept="image/*,video/*" class="hidden" onchange="loadPostAttachmentPreview(this)">
 
-        <div id="poll-ui" style="display:none; margin-top:20px; border-top:1px dashed #333; padding-top:15px;">
-            <h4 style="margin:0 0 10px 0; color:var(--pigeon);">Poll Options</h4>
-            <div id="poll-options-container"></div>
-            <button onclick="addPollOption()" style="background:#222; color:white; border:1px solid #444; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:12px; margin-top:8px;">+ Add Option</button>
-        </div>
-    </div>
+                <!-- Selected attachment visualizer -->
+                <div id="media-preview-box" class="relative hidden bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden p-2">
+                    <img id="media-preview-image" src="" class="w-full max-h-48 object-contain hidden rounded-lg">
+                    <video id="media-preview-video" src="" class="w-full max-h-48 object-contain hidden rounded-lg" controls></video>
+                    <button onclick="clearSelectedPostMediaAttachment()" class="absolute top-4 right-4 bg-red-600 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                </div>
 
-    <div id="chat-view">
-        <div class="chat-header">
-            <span onclick="closeChat()" style="font-size:24px; cursor:pointer;">←</span>
-            <div class="mini-avatar" id="chat-friend-avatar" style="width:40px; height:40px; font-size:20px;"></div>
-            <h3 id="chat-friend-name" style="margin:0; flex:1;"></h3>
-        </div>
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <button class="chat-send-btn" onclick="sendMessage()">📤</button>
+                <!-- Live Poll builder dynamic inputs -->
+                <div id="poll-builder" class="hidden bg-zinc-900 border border-zinc-800 p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-zinc-400 uppercase tracking-wide">Configure Voting Poll</span>
+                        <button onclick="addPollItemRow()" class="text-xs font-bold text-sky-400 hover:text-sky-300">+ Add Choice</button>
+                    </div>
+                    <div id="poll-inputs-container" class="space-y-2">
+                        <!-- Poll inputs are injected dynamically inside here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="game-overlay">
-        <div style="text-align:center; padding:20px; color:white; font-weight:bold; z-index:20003; position:relative; text-shadow: 2px 2px 0 #000;">Score: <span id="game-score">0</span> | <button onclick="stopFlappy()" style="background:white; color:black; border:none; border-radius:5px; padding:2px 8px; font-weight:bold;">Exit</button></div>
-        <div id="game-bird">🕊️</div>
+    <!-- ================= BOTTOM NAVIGATION SWITCHBOARD ================= -->
+    <nav class="fixed bottom-0 inset-x-0 h-16 bg-black border-t border-zinc-800 flex justify-around items-center z-30">
+        <button id="nav-home" onclick="switchTab('home')" class="flex flex-col items-center relative text-zinc-400 transition-all duration-150">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[9px] mt-1">Home</span>
+            <span class="nav-indicator absolute -bottom-1 w-1 h-1 bg-sky-400 rounded-full hidden"></span>
+        </button>
+        <button id="nav-shorts" onclick="switchTab('shorts')" class="flex flex-col items-center relative text-zinc-400 transition-all duration-150">
+            <i class="fa-solid fa-bolt text-lg"></i>
+            <span class="text-[9px] mt-1">Shorts</span>
+            <span class="nav-indicator absolute -bottom-1 w-1 h-1 bg-sky-400 rounded-full hidden"></span>
+        </button>
+        <button onclick="openPostModal()" class="w-12 h-12 bg-sky-500 hover:bg-sky-400 rounded-full flex items-center justify-center text-white text-lg shadow-lg shadow-sky-500/20 active:scale-90 transition-all duration-100">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+        <button id="nav-subs" onclick="switchTab('subs')" class="flex flex-col items-center relative text-zinc-400 transition-all duration-150">
+            <i class="fa-solid fa-user-group text-lg"></i>
+            <span class="text-[9px] mt-1">Subs</span>
+            <span class="nav-indicator absolute -bottom-1 w-1 h-1 bg-sky-400 rounded-full hidden"></span>
+        </button>
+        <button id="nav-you" onclick="switchTab('you')" class="flex flex-col items-center relative text-zinc-400 transition-all duration-150">
+            <i class="fa-solid fa-circle-user text-lg"></i>
+            <span class="text-[9px] mt-1">You</span>
+            <span class="nav-indicator absolute -bottom-1 w-1 h-1 bg-sky-400 rounded-full hidden"></span>
+        </button>
+    </nav>
+
+    <!-- ================= ARCADE ENGINE: FLAPPY PIGEON ================= -->
+    <div id="game-viewport" class="fixed inset-0 bg-sky-400 z-[60000] hidden flex-col overflow-hidden">
+        <!-- Dashboard top header panel -->
+        <div class="absolute top-0 inset-x-0 h-14 bg-black/60 backdrop-blur-md flex justify-between items-center px-4 z-50 border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">🕊️</span>
+                <span class="font-black text-sm text-white tracking-wide">Flappy Pigeon Arcade</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-extrabold text-yellow-300">Score: <span id="game-score-display">0</span></span>
+                <button onclick="exitFlappyArcade()" class="bg-red-600 hover:bg-red-700 text-white font-black text-xs px-4 py-1.5 rounded-lg border border-red-500 transition duration-150">Exit</button>
+            </div>
+        </div>
+        <canvas id="game-canvas" class="w-full h-full block cursor-pointer"></canvas>
     </div>
 
+    <!-- ================= APPLICATION CODE AND LOGIC MATRICES ================= -->
     <script>
-        // ===== FIREBASE SETUP =====
+        // --- 1. FIREBASE INITIALIZATION WITH THE UPDATED CONFIGURATION ---
         const firebaseConfig = {
-            apiKey: "AIzaSyDEMO_REPLACE_WITH_YOUR_KEY",
-            authDomain: "pigeon-app.firebaseapp.com",
-            projectId: "pigeon-app",
-            storageBucket: "pigeon-app.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abc123def456"
+          apiKey: "AIzaSyDCrAjMOIh0yD9Vp6Zdp8MJ2qjip8dstdI",
+          authDomain: "pigeon-platform.firebaseapp.com",
+          projectId: "pigeon-platform",
+          storageBucket: "pigeon-platform.firebasestorage.app",
+          messagingSenderId: "322112493288",
+          appId: "1:322112493288:web:24022f9dd5e0dc83469b5d",
+          measurementId: "G-3W3M6636RX"
+        };
+        
+        // Initialize Firebase compat app
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'pigeon-platform';
+
+        // Local Memory & Active States
+        let accountProfiles = {}; 
+        let currentActiveUser = null; 
+        let selectedPostMediaBase64 = null;
+        let selectedPostMediaType = null;
+        let activeTab = 'home';
+        let subAccountsList = []; 
+        let friendsList = []; 
+        let sidebarFriendsList = []; 
+        let currentMatrixChatRoomTarget = null; 
+
+        // Toast Notifier
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-xl shadow-2xl text-xs font-bold text-white mb-2 transition-all duration-300 transform translate-y-2 opacity-0 flex items-center gap-2 ${type === 'error' ? 'bg-red-600 border border-red-500' : 'bg-sky-600 border border-sky-500'}`;
+            toast.innerHTML = `<span>${type === 'error' ? '🚨' : '✨'}</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Seed initial platform mock profiles (Only local fallback if needed)
+        function seedMockPlatformDirectory() {
+            if(!localStorage.getItem('pigeon_master_profiles')) {
+                const sampleAccounts = {
+                    "news_reporter": { password: "password", avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80', friends: [], subs: [], posts: [] },
+                    "creative_artist": { password: "password", avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80', friends: [], subs: [], posts: [] },
+                    "gamer_pro": { password: "password", avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=120&q=80', friends: [], subs: [], posts: [] },
+                    "nature_pigeon": { password: "password", avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80', friends: [], subs: [], posts: [] }
+                };
+                localStorage.setItem('pigeon_master_profiles', JSON.stringify(sampleAccounts));
+            }
+            accountProfiles = JSON.parse(localStorage.getItem('pigeon_master_profiles'));
+        }
+
+        // Anonymous Sign In to Firebase to satisfy Auth Rules before querying
+        async function authenticateFirebase() {
+            try {
+                if (!auth.currentUser) {
+                    await auth.signInAnonymously();
+                }
+            } catch (error) {
+                console.error("Firebase auth issue: ", error);
+            }
+        }
+
+        // Listen for Firestore real-time updates for posts
+        function startFirestoreListeners() {
+            const postsCollection = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts');
+            
+            postsCollection.onSnapshot((snapshot) => {
+                const posts = [];
+                snapshot.forEach(doc => {
+                    posts.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort posts locally by createdAt
+                posts.sort((a, b) => b.createdAt - a.createdAt);
+                
+                // Save locally to emulate offline/speed loading and build streams
+                localStorage.setItem('pigeon_master_posts', JSON.stringify(posts));
+                buildMasterStreams();
+            }, (error) => {
+                console.error("Error reading posts from Firestore: ", error);
+            });
+        }
+
+        // --- SUB GATES ENGINE FLOW ---
+        window.subscribeToUltra = function() {
+            window.open('https://www.youtube.com/@Ultra-wk8ed', '_blank');
+            localStorage.setItem('pigeon_sub_passed', 'true');
+            setTimeout(() => {
+                document.getElementById('sub-gate').style.display = 'none';
+                document.getElementById('auth-gate').style.display = 'flex';
+            }, 1000);
         };
 
-        let db, storage, rtdb, firebaseReady = false;
-        
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            storage = firebase.storage();
-            rtdb = firebase.database();
-            firebaseReady = true;
-        } catch(e) {
-            console.log("Firebase not configured. Using local mode.", e);
-            firebaseReady = false;
-        }
-
-        // ===== APP STATE =====
-        let userHandle = "", userEmoji = "👤", recoveryKey = "";
-        let allPosts = [], networkList = [];
-        let currentMedia = null, currentTab = 'home';
-        let selectedChatUser = null, chatHistory = {};
-        let pollOptions = [];
-
-        // ===== INIT =====
-        async function initApp() {
-            populateEmojis();
-            
-            // Check global sub status FIRST
-            const isSubscribed = localStorage.getItem('pigeon_sub') === 'true';
-            const savedUser = localStorage.getItem('pigeon_handle');
-            
-            if (!isSubscribed) {
-                // Not subscribed - Lock them out at the Front Gate
-                document.getElementById('front-sub-gate').style.display = 'flex';
-            } else if (savedUser) {
-                // Subscribed AND user logged in - go to app
-                userHandle = savedUser;
-                userEmoji = localStorage.getItem('pigeon_emoji') || "👤";
-                recoveryKey = localStorage.getItem('pigeon_key') || "";
-                if(localStorage.getItem('pigeon_network')) {
-                    networkList = JSON.parse(localStorage.getItem('pigeon_network'));
-                }
-                
-                document.getElementById('main-ui').style.display = 'block';
-                loadPosts();
-                listenToChats();
+        window.showLiarScreen = function() {
+            const passed = localStorage.getItem('pigeon_sub_passed') === 'true';
+            if (!passed) {
+                document.getElementById('liar-screen').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('liar-screen').classList.add('hidden');
+                }, 3000);
             } else {
-                // Subscribed but NO user logged in - go to Splash Screen
-                document.getElementById('splash-screen').style.display = 'flex';
+                document.getElementById('sub-gate').style.display = 'none';
+                document.getElementById('auth-gate').style.display = 'flex';
             }
-        }
+        };
 
-        function unlockSubGate() {
-            // Save global unlock to browser
-            localStorage.setItem('pigeon_sub', 'true');
-            document.getElementById('front-sub-gate').style.display = 'none';
-            
-            // Route user depending on if they are logged in or not
-            const savedUser = localStorage.getItem('pigeon_handle');
-            if (savedUser) {
-                document.getElementById('main-ui').style.display = 'block';
-                loadPosts();
-            } else {
-                document.getElementById('splash-screen').style.display = 'flex';
-            }
-        }
-
-        function showAuthGate() {
-            document.getElementById('splash-screen').style.display = 'none';
-            document.getElementById('id-gate').style.display = 'flex';
-        }
-
-        function populateEmojis() {
-            const grid = document.getElementById('emoji-grid');
-            const emojis = ['🎭','🎨','🎪','🎬','🎮','🎯','🎲','🎳','🏃','🏋️','🤸','🧘','🚀','✈️','🛸','🚁','🚂','🚢','🏎️','⛵','🦁','🐯','🐻','🐼','🐨','🐶','🐱','🦊','🐰','🦝','🦉','🦆','🦅','🦜','🦚','🦩','🐢','🐍','🦎','🦖','🦕','🌟','⭐','✨','🌠','💫','🌌','🔥','💥','⚡','❄️','🌊','🌋'];
-            
-            emojis.forEach(emoji => {
-                let span = document.createElement('span');
-                span.innerText = emoji;
-                span.style.cursor = 'pointer';
-                span.style.fontSize = '24px';
-                span.style.padding = '5px';
-                span.style.borderRadius = '5px';
-                span.onclick = function(){
-                    Array.from(grid.children).forEach(c=>c.style.background='none');
-                    this.style.background='var(--pigeon)';
-                    userEmoji = this.innerText;
-                };
-                grid.appendChild(span);
-            });
-        }
-
-        function register() {
-            userHandle = document.getElementById('u-name').value.trim();
-            const pass = document.getElementById('u-pass').value;
-            
-            if(userHandle.length < 5 || userHandle.length > 20) return alert("Handle must be 5-20 chars");
-            if(pass.length < 6) return alert("Password min 6 chars");
-            
-            recoveryKey = "PG-" + Math.random().toString(36).substr(2, 10).toUpperCase();
-            document.getElementById('key-text').innerText = recoveryKey;
-            document.getElementById('recovery-display').style.display = "block";
-            document.getElementById('main-auth-btn').innerText = "ENTER PIGEON";
-            document.getElementById('main-auth-btn').onclick = () => {
-                localStorage.setItem('pigeon_handle', userHandle);
-                localStorage.setItem('pigeon_emoji', userEmoji);
-                localStorage.setItem('pigeon_key', recoveryKey);
-                localStorage.setItem('pigeon_network', JSON.stringify([]));
-                
-                // Save user to Firestore
-                if(firebaseReady) {
-                    db.collection('users').doc(userHandle).set({
-                        handle: userHandle,
-                        emoji: userEmoji,
-                        createdAt: new Date(),
-                        recoveryKey: recoveryKey
-                    }).catch(e => console.log("User save failed, using local mode"));
-                }
-                
-                document.getElementById('id-gate').style.display = 'none';
-                document.getElementById('main-ui').style.display = 'block';
-                loadPosts();
-                listenToChats();
-            };
-        }
-
-        function logout() {
-            localStorage.clear();
-            location.reload();
-        }
-
-        // ===== POSTS & FIRESTORE =====
-        async function loadPosts() {
-            const feedBox = document.getElementById('feed');
-            feedBox.innerHTML = '<div class="loading">Loading posts...</div>';
-            
-            if(firebaseReady) {
-                try {
-                    db.collection('posts').orderBy('createdAt', 'desc').limit(50).onSnapshot(snapshot => {
-                        allPosts = [];
-                        snapshot.forEach(doc => {
-                            allPosts.push({ id: doc.id, ...doc.data() });
-                        });
-                        renderFeed();
-                    });
-                } catch(e) {
-                    console.log("Firestore query failed, using local mode");
-                    renderFeed();
-                }
-            } else {
-                renderFeed();
-            }
-        }
-
-        async function postNow() {
-            const text = document.getElementById('post-text').value.trim();
-            if(!text && !currentMedia) return alert("Add text or media!");
-            
-            let mediaUrl = null;
-            if(currentMedia) {
-                if(firebaseReady) {
-                    try {
-                        const ref = storage.ref('posts/' + Date.now() + '_' + Math.random());
-                        await ref.putString(currentMedia.src, 'data_url');
-                        mediaUrl = await ref.getDownloadURL();
-                    } catch(e) {
-                        console.log("Media upload failed, using local data URL");
-                        mediaUrl = currentMedia.src;
-                    }
-                } else {
-                    mediaUrl = currentMedia.src;
-                }
-            }
-
-            const pollData = pollOptions.length > 1 ? pollOptions.map(p => ({ text: p, votes: 0, voters: [] })) : null;
-            const postData = {
-                user: userHandle,
-                emoji: userEmoji,
-                text: text,
-                media: mediaUrl ? { type: currentMedia.type, src: mediaUrl } : null,
-                poll: pollData,
-                likes: 0,
-                dislikes: 0,
-                comments: [],
-                createdAt: new Date()
-            };
-
-            if(firebaseReady) {
-                try {
-                    await db.collection('posts').add(postData);
-                } catch(e) {
-                    console.log("Post failed, using local");
-                    postData.id = Date.now();
-                    allPosts.unshift(postData);
-                }
-            } else {
-                postData.id = Date.now();
-                allPosts.unshift(postData);
-            }
-
-            document.getElementById('post-text').value = "";
-            pollOptions = [];
-            currentMedia = null;
-            document.getElementById('media-preview-container').style.display = 'none';
-            document.getElementById('poll-ui').style.display = 'none';
-            document.getElementById('poll-options-container').innerHTML = '';
-            closeStudio();
-            renderFeed();
-        }
-
-        // ===== MEDIA HANDLING =====
-        function handleMedia(input) {
+        // --- AUTH & MULTI-ACCOUNT SIGN-IN STEP ---
+        window.previewAvatar = function(input) {
             const file = input.files[0];
-            if(!file) return;
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                const isVideo = file.type.startsWith('video');
-                currentMedia = { type: isVideo ? 'video' : 'image', src: e.target.result };
-                const prevBox = document.getElementById('media-preview-container');
-                prevBox.style.display = 'block';
-                prevBox.innerHTML = isVideo 
-                    ? `<video src="${e.target.result}" style="width:100%; max-height:200px; border-radius:10px;" controls></video><button onclick="removeMedia()" style="position:absolute; top:5px; right:5px; background:#c62828; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✕</button>`
-                    : `<img src="${e.target.result}" style="width:100%; max-height:200px; object-fit:contain; border-radius:10px;"><button onclick="removeMedia()" style="position:absolute; top:5px; right:5px; background:#c62828; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✕</button>`;
+                document.getElementById('avatar-preview').src = e.target.result;
+                document.getElementById('avatar-preview').classList.remove('hidden');
+                document.getElementById('avatar-plus-icon').classList.add('hidden');
             };
             reader.readAsDataURL(file);
-        }
+        };
 
-        function removeMedia() {
-            currentMedia = null;
-            document.getElementById('media-preview-container').style.display = 'none';
-            document.getElementById('media-upload').value = '';
-        }
+        window.closeAuthGate = function() {
+            document.getElementById('auth-gate').style.display = 'none';
+        };
 
-        // ===== POLL SYSTEM =====
-        function togglePollUI() {
-            const pollUI = document.getElementById('poll-ui');
-            pollUI.style.display = pollUI.style.display === 'none' ? 'block' : 'none';
-            if(pollUI.style.display === 'block' && pollOptions.length === 0) {
-                pollOptions = ['', ''];
-                renderPollOptions();
+        window.createAccount = function() {
+            const userIn = document.getElementById('username-input').value.trim().toLowerCase();
+            const passIn = document.getElementById('password-input').value.trim();
+            const avatarIn = document.getElementById('avatar-preview').src;
+
+            if (userIn.length < 4 || userIn.length > 16) {
+                return showToast("Username handle criteria invalid! Pick 4-16 characters.", "error");
             }
-        }
-
-        function addPollOption() {
-            if(pollOptions.length >= 10) return alert("Max 10 options");
-            pollOptions.push('');
-            renderPollOptions();
-        }
-
-        function renderPollOptions() {
-            const container = document.getElementById('poll-options-container');
-            container.innerHTML = pollOptions.map((opt, idx) => `
-                <div class="poll-option-row">
-                    <input type="text" placeholder="Option ${idx+1}" value="${opt}" onchange="updatePollOption(${idx}, this.value)">
-                    <button class="remove-poll-btn" onclick="removePollOption(${idx})">✕</button>
-                </div>
-            `).join('');
-        }
-
-        function updatePollOption(idx, value) {
-            pollOptions[idx] = value.trim();
-        }
-
-        function removePollOption(idx) {
-            pollOptions.splice(idx, 1);
-            renderPollOptions();
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const postText = document.getElementById('post-text');
-            if(postText) {
-                postText.addEventListener('input', () => {
-                    document.getElementById('char-count').innerText = postText.value.length;
-                });
+            if (passIn.length < 5 || passIn.length > 11) {
+                return showToast("Password criteria must be between 5-11 characters!", "error");
             }
-        });
-
-        // ===== CHAT SYSTEM (FIRESTORE) =====
-        function openChat(friendHandle, friendEmoji) {
-            selectedChatUser = { handle: friendHandle, emoji: friendEmoji };
-            document.getElementById('chat-view').style.display = 'flex';
-            document.getElementById('chat-friend-name').innerText = '@' + friendHandle;
-            document.getElementById('chat-friend-avatar').innerText = friendEmoji;
-            loadChatMessages(friendHandle);
-        }
-
-        function closeChat() {
-            selectedChatUser = null;
-            document.getElementById('chat-view').style.display = 'none';
-            document.getElementById('chat-messages').innerHTML = '';
-        }
-
-        function getChatRoomId(user1, user2) {
-            return [user1, user2].sort().join('_');
-        }
-
-        async function loadChatMessages(friendHandle) {
-            const roomId = getChatRoomId(userHandle, friendHandle);
-            const messagesDiv = document.getElementById('chat-messages');
-            messagesDiv.innerHTML = '';
-
-            if(firebaseReady) {
-                try {
-                    db.collection('chats').doc(roomId).collection('messages')
-                        .orderBy('timestamp', 'asc')
-                        .onSnapshot(snapshot => {
-                            messagesDiv.innerHTML = '';
-                            snapshot.forEach(doc => {
-                                const msg = doc.data();
-                                const isOwn = msg.sender === userHandle;
-                                const msgDiv = document.createElement('div');
-                                msgDiv.className = 'message' + (isOwn ? ' own' : '');
-                                msgDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
-                                messagesDiv.appendChild(msgDiv);
-                            });
-                            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                        });
-                } catch(e) {
-                    console.log("Chat load failed", e);
-                }
+            if (!avatarIn || avatarIn === "" || document.getElementById('avatar-preview').classList.contains('hidden')) {
+                return showToast("Please provide an avatar profile picture!", "error");
             }
-        }
+            if (accountProfiles[userIn]) {
+                return showToast("This handle is taken! Choose another alias.", "error");
+            }
 
-        async function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if(!text || !selectedChatUser) return;
-
-            const roomId = getChatRoomId(userHandle, selectedChatUser.handle);
-            const msgData = {
-                sender: userHandle,
-                text: text,
-                timestamp: new Date(),
-                read: false
+            const profilePayload = {
+                password: passIn,
+                avatar: avatarIn,
+                friends: [],
+                subs: [],
+                posts: []
             };
 
-            if(firebaseReady) {
-                try {
-                    await db.collection('chats').doc(roomId).collection('messages').add(msgData);
-                } catch(e) {
-                    console.log("Message send failed", e);
+            accountProfiles[userIn] = profilePayload;
+            localStorage.setItem('pigeon_master_profiles', JSON.stringify(accountProfiles));
+
+            currentActiveUser = userIn;
+            localStorage.setItem('pigeon_logged_user', userIn);
+
+            if (!subAccountsList.includes(userIn)) {
+                subAccountsList.push(userIn);
+                localStorage.setItem('pigeon_sub_accounts', JSON.stringify(subAccountsList));
+            }
+
+            document.getElementById('auth-gate').style.display = 'none';
+            showToast(`Welcome to Pigeon ${userIn}! 🕊️`);
+            initSessionState();
+        };
+
+        // Initialize state arrays on launch
+        async function initSessionState() {
+            seedMockPlatformDirectory();
+            await authenticateFirebase();
+            startFirestoreListeners();
+            
+            const savedPassed = localStorage.getItem('pigeon_sub_passed') === 'true';
+            const savedLogged = localStorage.getItem('pigeon_logged_user');
+            const savedSubs = localStorage.getItem('pigeon_sub_accounts');
+
+            if (savedSubs) {
+                subAccountsList = JSON.parse(savedSubs);
+            }
+
+            if (savedLogged && savedPassed) {
+                currentActiveUser = savedLogged;
+                document.getElementById('sub-gate').style.display = 'none';
+                document.getElementById('auth-gate').style.display = 'none';
+                
+                if(!subAccountsList.includes(currentActiveUser)) {
+                    subAccountsList.push(currentActiveUser);
+                    localStorage.setItem('pigeon_sub_accounts', JSON.stringify(subAccountsList));
+                }
+                
+                renderActiveAppInterface();
+                switchTab('home');
+            } else if (savedPassed) {
+                document.getElementById('sub-gate').style.display = 'none';
+                document.getElementById('auth-gate').style.display = 'flex';
+                document.getElementById('auth-back-btn').classList.add('hidden');
+            } else {
+                document.getElementById('sub-gate').style.display = 'flex';
+            }
+        }
+
+        function renderActiveAppInterface() {
+            const profile = accountProfiles[currentActiveUser];
+            if (!profile) return;
+            document.getElementById('header-avatar').src = profile.avatar;
+            document.getElementById('you-profile-avatar').src = profile.avatar;
+            document.getElementById('you-profile-name').innerText = `${currentActiveUser}`;
+
+            updateDashboardMetrics();
+            buildMasterStreams();
+            buildFriendsAndSubscribersLists();
+        }
+
+        function updateDashboardMetrics() {
+            const profile = accountProfiles[currentActiveUser];
+            if (!profile) return;
+            const allPosts = JSON.parse(localStorage.getItem('pigeon_master_posts') || "[]");
+            const userPosts = allPosts.filter(p => p.username === currentActiveUser);
+            
+            document.getElementById('you-friends-count').innerText = (profile.friends || []).length;
+            document.getElementById('you-subs-count').innerText = (profile.subs || []).length;
+            document.getElementById('you-posts-count').innerText = userPosts.length;
+        }
+
+        // --- SUB ACCOUNTS SWITCHBOARD PANEL (IN TOP DRAWER) ---
+        function renderTopHubSubAccountSwitcherPanel() {
+            const grid = document.getElementById('top-hub-accounts-grid');
+            if (!grid) return;
+            grid.innerHTML = "";
+
+            subAccountsList.forEach(username => {
+                const prof = accountProfiles[username];
+                if (!prof) return;
+                const isActive = username === currentActiveUser;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex flex-col items-center gap-1.5 cursor-pointer relative shrink-0 ${isActive ? 'opacity-100 scale-105' : 'opacity-60 hover:opacity-100'} transition duration-150`;
+                wrapper.onclick = () => switchSessionUserContext(username);
+
+                wrapper.innerHTML = `
+                    <div class="w-12 h-12 rounded-full overflow-hidden border-2 ${isActive ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-zinc-800'}">
+                        <img src="${prof.avatar}" class="w-full h-full object-cover">
+                    </div>
+                    <span class="text-[9px] font-bold text-zinc-300 max-w-[50px] truncate text-center">${username}</span>
+                `;
+                grid.appendChild(wrapper);
+            });
+        }
+
+        function getMilestoneTargetForIndex(index) {
+            const milestones = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 5000, 10000, 50000, 100000, 500000, 1000000];
+            if (index < milestones.length) {
+                return milestones[index];
+            }
+            return 1000000;
+        }
+
+        function switchSessionUserContext(targetUser) {
+            if(targetUser === currentActiveUser) return;
+            currentActiveUser = targetUser;
+            localStorage.setItem('pigeon_logged_user', targetUser);
+            renderActiveAppInterface();
+            closeCreatorHub();
+            switchTab('home');
+            showToast(`Session switched securely to ${targetUser}! 🕊️`);
+        }
+
+        // --- CREATOR MILESTONES HUB LOGIC ---
+        window.openCreatorHub = function() {
+            const drawer = document.getElementById('creator-hub-drawer');
+            drawer.classList.remove('hidden');
+
+            const profile = accountProfiles[currentActiveUser];
+            const mySubscribersCount = (profile.subs || []).length;
+
+            document.getElementById('hub-avatar').src = profile.avatar;
+            document.getElementById('hub-username').innerText = `${currentActiveUser}`;
+            document.getElementById('hub-sub-count').innerText = mySubscribersCount;
+
+            const currentSlotCount = subAccountsList.length;
+            const nextThreshold = getMilestoneTargetForIndex(currentSlotCount - 1);
+
+            document.getElementById('hub-slot-requirement-text').innerText = `${nextThreshold} subscribers required`;
+
+            const btn = document.getElementById('hub-unlock-btn');
+            const icon = document.getElementById('hub-unlock-icon');
+
+            if (mySubscribersCount >= nextThreshold) {
+                btn.className = "w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg cursor-pointer scale-110 animate-bounce";
+                icon.className = "fa-solid fa-plus text-sm";
+                btn.onclick = triggerMilestoneProfileCreation;
+            } else {
+                btn.className = "w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 text-zinc-600 shadow-none cursor-not-allowed";
+                icon.className = "fa-solid fa-lock text-sm";
+                btn.onclick = null;
+            }
+
+            renderTopHubSubAccountSwitcherPanel();
+        };
+
+        window.closeCreatorHub = function() {
+            document.getElementById('creator-hub-drawer').classList.add('hidden');
+        };
+
+        function triggerMilestoneProfileCreation() {
+            closeCreatorHub();
+            document.getElementById('username-input').value = "";
+            document.getElementById('password-input').value = "";
+            document.getElementById('avatar-preview').src = "";
+            document.getElementById('avatar-preview').classList.add('hidden');
+            document.getElementById('avatar-plus-icon').classList.remove('hidden');
+
+            document.getElementById('auth-gate').style.display = 'flex';
+            document.getElementById('auth-back-btn').classList.remove('hidden');
+        }
+
+        // --- POSTING ENGINE AND MULTIMEDIA STUDIO ---
+        window.openPostModal = function() {
+            document.getElementById('post-modal').classList.remove('hidden');
+            pollOptionsCount = 0;
+            document.getElementById('poll-inputs-container').innerHTML = "";
+            document.getElementById('poll-builder').classList.add('hidden');
+            clearSelectedPostMediaAttachment();
+        };
+
+        window.closePostModal = function() {
+            document.getElementById('post-modal').classList.add('hidden');
+        };
+
+        window.activateDynamicPollOptionGroup = function() {
+            const builder = document.getElementById('poll-builder');
+            builder.classList.remove('hidden');
+            if (document.getElementById('poll-inputs-container').children.length === 0) {
+                addPollItemRow();
+                addPollItemRow();
+            }
+        };
+
+        let pollOptionsCount = 0;
+        window.addPollItemRow = function() {
+            const container = document.getElementById('poll-inputs-container');
+            const rowCount = container.children.length;
+            if (rowCount >= 10) return showToast("Limit of 10 choices reached!", "error");
+
+            const id = Date.now() + Math.floor(Math.random()*1000);
+            const div = document.createElement('div');
+            div.className = "flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-855";
+            div.id = `poll-opt-${id}`;
+            div.innerHTML = `
+                <input type="text" class="bg-transparent border-none outline-none text-xs flex-1 text-white px-2 placeholder-zinc-600 poll-choice-input" placeholder="Choice ${rowCount+1}">
+                <button onclick="removePollItemRow('${id}')" class="text-zinc-500 hover:text-red-400 px-2 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            container.appendChild(div);
+        };
+
+        window.removePollItemRow = function(id) {
+            const el = document.getElementById(`poll-opt-${id}`);
+            if (el) el.remove();
+        };
+
+        window.loadPostAttachmentPreview = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            selectedPostMediaType = file.type.startsWith('video') ? 'video' : 'image';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                selectedPostMediaBase64 = e.target.result;
+                const box = document.getElementById('media-preview-box');
+                const img = document.getElementById('media-preview-image');
+                const vid = document.getElementById('media-preview-video');
+
+                box.classList.remove('hidden');
+                if (selectedPostMediaType === 'video') {
+                    vid.src = e.target.result;
+                    vid.classList.remove('hidden');
+                    img.classList.add('hidden');
+                } else {
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    vid.classList.add('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.clearSelectedPostMediaAttachment = function() {
+            selectedPostMediaBase64 = null;
+            selectedPostMediaType = null;
+            document.getElementById('post-media-input').value = "";
+            document.getElementById('media-preview-box').classList.add('hidden');
+            document.getElementById('media-preview-image').classList.add('hidden');
+            document.getElementById('media-preview-video').classList.add('hidden');
+        };
+
+        // Helper to instantly update client-side cache & interface without waiting for Firestore
+        function updateLocalPostAndRender(postId, callback) {
+            const masterPosts = JSON.parse(localStorage.getItem('pigeon_master_posts') || "[]");
+            const idx = masterPosts.findIndex(p => p.id === postId);
+            if (idx !== -1) {
+                callback(masterPosts[idx]);
+                localStorage.setItem('pigeon_master_posts', JSON.stringify(masterPosts));
+                buildMasterStreams();
+            }
+        }
+
+        // Instant Publishing 🚀
+        window.publishFeedPost = function() {
+            const text = document.getElementById('post-input').value.trim();
+            if (!text && !selectedPostMediaBase64) {
+                return showToast("Provide text content or add an attachment to upload!", "error");
+            }
+
+            const pollInputs = document.querySelectorAll('.poll-choice-input');
+            let pollPayload = null;
+            if (pollInputs.length > 0) {
+                const choices = [];
+                pollInputs.forEach(i => {
+                    const val = i.value.trim();
+                    if (val) {
+                        choices.push({ text: val, votes: 0, voters: [] });
+                    }
+                });
+                if (choices.length >= 2) {
+                    pollPayload = choices;
                 }
             }
 
-            input.value = '';
-        }
+            const isShortContent = selectedPostMediaType === 'video';
+            const tempId = 'temp-' + Date.now();
 
-        function listenToChats() {
-            // Setup chat listeners when needed
-        }
+            const newPost = {
+                id: tempId,
+                username: currentActiveUser,
+                avatar: accountProfiles[currentActiveUser].avatar,
+                text: text,
+                media: selectedPostMediaBase64,
+                mediaType: selectedPostMediaType || null,
+                poll: pollPayload,
+                isShort: isShortContent,
+                likes: 0,
+                likedBy: [],
+                dislikes: 0,
+                dislikedBy: [],
+                comments: [],
+                createdAt: Date.now()
+            };
 
-        // ===== DRAWER & NETWORK =====
-        function toggleDrawer(show) {
-            document.getElementById('friends-drawer').style.left = show ? "0" : "-280px";
-            document.getElementById('drawer-overlay').style.display = show ? "block" : "none";
-            if(show) renderDrawerList();
-        }
+            // 1. Instantly inject into local cache to display immediately
+            const localPosts = JSON.parse(localStorage.getItem('pigeon_master_posts') || "[]");
+            localPosts.unshift(newPost);
+            localStorage.setItem('pigeon_master_posts', JSON.stringify(localPosts));
+            buildMasterStreams();
 
-        function addNetwork(handle, emoji, type) {
-            if(handle === userHandle) return alert("Can't add yourself!");
-            let exists = networkList.find(n => n.handle === handle && n.type === type);
-            if(!exists) {
-                networkList.push({ handle, emoji, type });
-                localStorage.setItem('pigeon_network', JSON.stringify(networkList));
-                alert(`Added ${handle}!`);
-                renderFeed();
+            // 2. Instantly redirect, clear fields, and close creator modal
+            switchTab('home');
+            setTimeout(() => {
+                const viewport = document.getElementById('app-window');
+                if (viewport) viewport.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 50);
+
+            document.getElementById('post-input').value = "";
+            clearSelectedPostMediaAttachment();
+            closePostModal();
+
+            showToast("Content published to timeline!");
+            updateDashboardMetrics();
+
+            // 3. Sync to Firestore silently in background
+            const dbPayload = { ...newPost };
+            delete dbPayload.id;
+
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts')
+                .add(dbPayload)
+                .catch(err => {
+                    console.error("Firestore sync failed in background: ", err);
+                });
+        };
+
+        // --- CENTRALIZED FEED RENDERING ARCHITECTURE ---
+        function buildMasterStreams() {
+            const masterPosts = JSON.parse(localStorage.getItem('pigeon_master_posts') || "[]");
+            const homeContainer = document.getElementById('posts-stream');
+            const shortsContainer = document.getElementById('shorts-stream');
+
+            if (!homeContainer || !shortsContainer) return;
+
+            homeContainer.innerHTML = "";
+            shortsContainer.innerHTML = "";
+
+            const regularPosts = masterPosts.filter(p => !p.isShort);
+            const shortsPosts = masterPosts.filter(p => p.isShort);
+
+            if (regularPosts.length === 0) {
+                homeContainer.innerHTML = `<p class="text-center py-10 text-zinc-600 text-xs">No posts inside feed timeline yet. Be the first to publish! 📝</p>`;
             } else {
-                alert(`Already have ${handle}!`);
-            }
-        }
-
-        function renderDrawerList() {
-            const query = document.getElementById('drawer-search').value.toLowerCase();
-            const container = document.getElementById('drawer-list-container');
-            const friends = networkList.filter(n => n.type === 'friend' && n.handle.toLowerCase().includes(query));
-            
-            if(friends.length === 0) {
-                container.innerHTML = "<p style='color:var(--gray); font-size:12px;'>No friends. Add some!</p>";
-                return;
-            }
-            
-            container.innerHTML = friends.map(f => `
-                <div class="list-item" onclick="openChat('${f.handle}', '${f.emoji}')">
-                    <div class="mini-avatar" style="width:35px; height:35px; font-size:18px;">${f.emoji}</div>
-                    <div style="flex:1;">
-                        <b style="font-size:14px;">@${f.handle}</b>
-                    </div>
-                    <span style="font-size:16px;">💬</span>
-                </div>
-            `).join('');
-        }
-
-        // ===== FEED RENDERING =====
-        function switchTab(tab) {
-            currentTab = tab;
-            renderFeed();
-            window.scrollTo(0,0);
-        }
-
-        function renderFeed() {
-            let feedBox = document.getElementById('feed');
-            let feedHTML = "";
-            let postsToRender = [];
-
-            // PROFILE TAB
-            if (currentTab === 'you') {
-                feedHTML += `
-                <div style="padding:30px 20px; text-align:center; border-bottom:8px solid #222; background:linear-gradient(180deg, #111, #000);">
-                    <div style="font-size:50px; background:#222; border-radius:50%; width:90px; height:90px; margin:0 auto 10px auto; display:flex; align-items:center; justify-content:center;">${userEmoji}</div>
-                    <h2 style="margin:0;">@${userHandle}</h2>
-                    <p style="color:var(--gray); margin:5px 0;">${networkList.filter(n=>n.type==='sub').length} Subscribers</p>
-                    <div style="background:#1a1a1a; padding:10px; border-radius:8px; display:inline-block; margin-top:10px; font-size:11px; border:1px dashed var(--pigeon);">
-                        <span style="color:var(--pigeon)">Recovery:</span> ${recoveryKey}
-                    </div>
-                </div>
-                <h3 style="padding:15px; margin:0; border-bottom:1px solid #333;">Your Posts</h3>`;
-                postsToRender = allPosts.filter(p => p.user === userHandle);
-            } 
-            // SUBS TAB
-            else if (currentTab === 'subs') {
-                feedHTML += `<h3 style="padding:15px; margin:0; border-bottom:1px solid #333; color:gold;">★ Subscriptions</h3>`;
-                let subbedHandles = networkList.filter(n => n.type === 'sub').map(n => n.handle);
-                postsToRender = allPosts.filter(p => subbedHandles.includes(p.user));
-            } 
-            // HOME TAB
-            else {
-                postsToRender = allPosts;
-            }
-
-            if(postsToRender.length === 0) {
-                feedHTML += `<p style='text-align:center; padding:40px 20px; color:var(--gray);'>No posts yet!</p>`;
-            } else {
-                postsToRender.forEach(post => {
-                    feedHTML += renderPostCard(post);
+                regularPosts.forEach(post => {
+                    homeContainer.appendChild(createPostCardDOM(post));
                 });
             }
 
-            feedBox.innerHTML = feedHTML;
-        }
-
-        function renderPostCard(post) {
-            const deleteBtn = post.user === userHandle ? `<button class="btn-small" onclick="deletePost('${post.id}')" style="background:#c62828; border-color:#c62828;">🗑️</button>` : '';
-            
-            return `
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="mini-avatar" style="width:35px; height:35px; font-size:20px;">${post.emoji}</div>
-                            <b>@${post.user}</b>
-                        </div>
-                        <div style="display:flex; gap:5px;">
-                            ${post.user !== userHandle ? `<button class="btn-small" onclick="addNetwork('${post.user}', '${post.emoji}', 'friend')">+ Friend</button>` : ''}
-                            ${post.user !== userHandle ? `<button class="btn-small" style="color:gold; border-color:gold;" onclick="addNetwork('${post.user}', '${post.emoji}', 'sub')">★ Sub</button>` : ''}
-                            ${deleteBtn}
-                        </div>
-                    </div>
-                    <p style="margin:5px 0 10px 0;">${post.text}</p>
-                    
-                    ${post.media ? (post.media.type === 'video' 
-                        ? `<video src="${post.media.src}" class="card-media" controls></video>` 
-                        : `<img src="${post.media.src}" class="card-media">`) : ''}
-
-                    ${post.poll ? `
-                    <div class="poll-v">
-                        ${post.poll.map((opt, i) => {
-                            const total = post.poll.reduce((a, b) => a + b.votes, 0);
-                            const pct = total === 0 ? 0 : Math.round((opt.votes / total) * 100);
-                            return `
-                                <div class="poll-opt" onclick="castVote('${post.id}', ${i})">
-                                    <div class="poll-fill" style="width:${pct}%"></div>
-                                    <span style="position:relative">${opt.voters.includes(userHandle) ? '●' : '○'} ${opt.text}</span>
-                                    <span style="position:relative">${opt.votes}v</span>
-                                </div>`;
-                        }).join('')}
-                    </div>` : ''}
-
-                    <div class="action-bar">
-                        <span onclick="likePost('${post.id}')">👍 ${post.likes || 0}</span>
-                        <span onclick="dislikePost('${post.id}')">👎 ${post.dislikes || 0}</span>
-                        <span>💬 ${(post.comments || []).length}</span>
-                    </div>
-                </div>`;
-        }
-
-        async function deletePost(postId) {
-            if(!confirm("Delete post?")) return;
-            if(firebaseReady) {
-                try {
-                    await db.collection('posts').doc(postId).delete();
-                } catch(e) {
-                    console.log("Delete failed");
-                    allPosts = allPosts.filter(p => p.id !== postId);
-                    renderFeed();
-                }
+            if (shortsPosts.length === 0) {
+                shortsContainer.innerHTML = `<p class="text-center py-10 text-zinc-600 text-xs">No video shorts created.</p>`;
             } else {
-                allPosts = allPosts.filter(p => p.id !== postId);
-                renderFeed();
+                shortsPosts.forEach(post => {
+                    shortsContainer.appendChild(createPostCardDOM(post));
+                });
             }
+
+            renderProfileSubStreams();
         }
 
-        async function likePost(postId) {
-            const post = allPosts.find(p => p.id === postId);
-            if(post) {
-                post.likes = (post.likes || 0) + 1;
-                if(firebaseReady) {
-                    try {
-                        await db.collection('posts').doc(postId).update({ likes: post.likes });
-                    } catch(e) {}
+        function createPostCardDOM(post) {
+            const card = document.createElement('div');
+            card.className = "bg-zinc-900 border border-zinc-800 p-4 rounded-3xl space-y-3 relative animate-fadeIn";
+
+            const isOwn = post.username === currentActiveUser;
+            const profile = accountProfiles[currentActiveUser] || { friends: [], subs: [] };
+
+            const isFriend = profile.friends && profile.friends.includes(post.username);
+            const isSub = profile.subs && profile.subs.includes(post.username);
+
+            const hasLiked = post.likedBy && post.likedBy.includes(currentActiveUser);
+            const hasDisliked = post.dislikedBy && post.dislikedBy.includes(currentActiveUser);
+
+            let mediaMarkup = "";
+            if (post.media) {
+                if (post.mediaType === 'video') {
+                    mediaMarkup = `<video src="${post.media}" class="w-full max-h-64 object-cover rounded-2xl border border-zinc-800" controls></video>`;
+                } else {
+                    mediaMarkup = `<img src="${post.media}" class="w-full max-h-64 object-cover rounded-2xl border border-zinc-800">`;
                 }
-                renderFeed();
             }
+
+            let pollMarkup = "";
+            if (post.poll) {
+                const totalVotes = post.poll.reduce((sum, item) => sum + (item.votes || 0), 0);
+                pollMarkup = `
+                    <div class="space-y-2 bg-zinc-950 p-3 rounded-2xl border border-zinc-855">
+                        ${post.poll.map((opt, idx) => {
+                            const pct = totalVotes === 0 ? 0 : Math.round((opt.votes / totalVotes)*100);
+                            const voted = opt.voters && opt.voters.includes(currentActiveUser);
+                            return `
+                                <div onclick="voteOnPollItem('${post.id}', ${idx})" class="relative bg-zinc-900 border border-zinc-800 p-3 rounded-xl cursor-pointer overflow-hidden flex justify-between items-center text-xs">
+                                    <div class="absolute left-0 top-0 bottom-0 bg-sky-500/10 transition-all" style="width: ${pct}%"></div>
+                                    <span class="relative font-semibold">${voted ? '🟢' : '⚪'} ${opt.text}</span>
+                                    <span class="relative text-[10px] text-zinc-500 font-black">${pct}% (${opt.votes || 0})</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            // Friend & Sub buttons apply to everyone, disabled for owners with styling
+            const btnClassFriend = isOwn 
+                ? 'opacity-40 cursor-not-allowed bg-zinc-850 text-zinc-500' 
+                : (isFriend ? 'bg-emerald-500 text-white' : 'bg-zinc-850 text-zinc-300 hover:bg-zinc-800');
+            
+            const btnClassSub = isOwn 
+                ? 'opacity-40 cursor-not-allowed bg-zinc-850 text-zinc-500' 
+                : (isSub ? 'bg-amber-500 text-white' : 'bg-zinc-850 text-zinc-300 hover:bg-zinc-800');
+
+            const friendAction = isOwn ? '' : `onclick="toggleFriendStatus('${post.username}')"`;
+            const subAction = isOwn ? '' : `onclick="toggleSubscribeStatus('${post.username}')"`;
+
+            card.innerHTML = `
+                <!-- Author Header with Profile Picture -->
+                <div class="flex items-center justify-between">
+                    <div onclick="navigateToPublicProfile('${post.username}')" class="flex items-center gap-3 cursor-pointer">
+                        <div class="w-10 h-10 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700">
+                            <img src="${post.avatar}" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <span class="font-bold text-sm block hover:text-sky-400">${post.username}</span>
+                            <span class="text-[10px] text-zinc-500">${timeAgo(post.createdAt)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Connect Action Buttons -->
+                    <div class="flex items-center gap-1.5">
+                        <button ${friendAction} class="text-[10px] px-3 py-1.5 rounded-full font-bold transition duration-150 ${btnClassFriend}">
+                            ${isFriend ? 'Friends <i class="fa-solid fa-check"></i>' : '+ Friend'}
+                        </button>
+                        <button ${subAction} class="text-[10px] px-3 py-1.5 rounded-full font-bold transition duration-150 ${btnClassSub}">
+                            ${isSub ? 'Subscribed' : '★ Sub'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text Content -->
+                <p class="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">${post.text}</p>
+                ${mediaMarkup}
+                ${pollMarkup}
+
+                <!-- Engagement Loop Controls -->
+                <div class="flex items-center gap-6 pt-2 border-t border-zinc-800 text-zinc-500 text-xs">
+                    <button onclick="likePost('${post.id}')" class="flex items-center gap-1.5 transition duration-150 ${hasLiked ? 'text-sky-400 font-bold' : 'hover:text-sky-400'}">
+                        <i class="fa-solid fa-thumbs-up"></i> <span>${post.likes || 0}</span>
+                    </button>
+                    <button onclick="dislikePost('${post.id}')" class="flex items-center gap-1.5 transition duration-150 ${hasDisliked ? 'text-red-400 font-bold' : 'hover:text-red-400'}">
+                        <i class="fa-solid fa-thumbs-down"></i> <span>${post.dislikes || 0}</span>
+                    </button>
+                    <button onclick="toggleCommentDrawer('${post.id}')" class="hover:text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-comment"></i> <span>${(post.comments || []).length}</span>
+                    </button>
+                </div>
+
+                <!-- Comments Box Drawer -->
+                <div id="comment-box-${post.id}" class="hidden space-y-3 pt-3 border-t border-zinc-800">
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                        ${(post.comments || []).map((c, commentIdx) => {
+                            const cLiked = c.likedBy && c.likedBy.includes(currentActiveUser);
+                            const cDisliked = c.dislikedBy && c.dislikedBy.includes(currentActiveUser);
+                            return `
+                                <div class="bg-zinc-950 p-2.5 rounded-xl text-xs space-y-2 border border-zinc-900">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-5 h-5 rounded-full overflow-hidden bg-zinc-850">
+                                            <img src="${c.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=40&q=80'}" class="w-full h-full object-cover">
+                                        </div>
+                                        <span class="font-bold text-sky-400">${c.user}</span>
+                                    </div>
+                                    <p class="text-zinc-300 pl-7">${c.text}</p>
+                                    
+                                    <!-- Comment Feedback Controls -->
+                                    <div class="flex items-center gap-4 pl-7 text-[10px] text-zinc-500">
+                                        <button onclick="likeComment('${post.id}', ${commentIdx})" class="flex items-center gap-1 hover:text-sky-400 ${cLiked ? 'text-sky-400 font-bold' : ''}">
+                                            <i class="fa-solid fa-thumbs-up"></i> <span>${c.likes || 0}</span>
+                                        </button>
+                                        <button onclick="dislikeComment('${post.id}', ${commentIdx})" class="flex items-center gap-1 hover:text-red-400 ${cDisliked ? 'text-red-400 font-bold' : ''}">
+                                            <i class="fa-solid fa-thumbs-down"></i> <span>${c.dislikes || 0}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="comment-input-${post.id}" placeholder="Post a comment..." class="bg-zinc-950 border border-zinc-850 rounded-xl px-3 py-2 text-xs flex-1 outline-none focus:border-sky-500">
+                        <button onclick="addCommentToPost('${post.id}')" class="bg-sky-500 hover:bg-sky-400 text-white rounded-xl px-4 text-xs font-bold">Add</button>
+                    </div>
+                </div>
+            `;
+            return card;
         }
 
-        async function dislikePost(postId) {
-            const post = allPosts.find(p => p.id === postId);
-            if(post) {
-                post.dislikes = (post.dislikes || 0) + 1;
-                if(firebaseReady) {
-                    try {
-                        await db.collection('posts').doc(postId).update({ dislikes: post.dislikes });
-                    } catch(e) {}
+        window.likePost = function(id) {
+            updateLocalPostAndRender(id, (post) => {
+                let likedBy = post.likedBy || [];
+                let dislikedBy = post.dislikedBy || [];
+                let currentLikes = post.likes || 0;
+                let currentDislikes = post.dislikes || 0;
+
+                if (likedBy.includes(currentActiveUser)) {
+                    likedBy = likedBy.filter(u => u !== currentActiveUser);
+                    currentLikes = Math.max(0, currentLikes - 1);
+                } else {
+                    likedBy.push(currentActiveUser);
+                    currentLikes += 1;
+                    if (dislikedBy.includes(currentActiveUser)) {
+                        dislikedBy = dislikedBy.filter(u => u !== currentActiveUser);
+                        currentDislikes = Math.max(0, currentDislikes - 1);
+                    }
                 }
-                renderFeed();
-            }
-        }
 
-        async function castVote(postId, optionIdx) {
-            const post = allPosts.find(p => p.id === postId);
-            if(!post || !post.poll) return;
-            if(post.poll.some(o => o.voters.includes(userHandle))) return alert("Already voted!");
-            
-            post.poll[optionIdx].votes++;
-            post.poll[optionIdx].voters.push(userHandle);
-            
-            if(firebaseReady) {
-                try {
-                    await db.collection('posts').doc(postId).update({ poll: post.poll });
-                } catch(e) {}
-            }
-            renderFeed();
-        }
+                post.likes = currentLikes;
+                post.likedBy = likedBy;
+                post.dislikes = currentDislikes;
+                post.dislikedBy = dislikedBy;
 
-        // ===== STUDIO =====
-        function openStudio() {
-            document.getElementById('studio').style.display = 'flex';
-        }
+                // Sync to database
+                if (!id.startsWith('temp-')) {
+                    db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts').doc(id).update({ 
+                        likes: currentLikes, 
+                        likedBy: likedBy,
+                        dislikes: currentDislikes,
+                        dislikedBy: dislikedBy
+                    }).catch(e => console.error(e));
+                }
+            });
+        };
 
-        function closeStudio() {
-            document.getElementById('studio').style.display = 'none';
-        }
+        window.dislikePost = function(id) {
+            updateLocalPostAndRender(id, (post) => {
+                let likedBy = post.likedBy || [];
+                let dislikedBy = post.dislikedBy || [];
+                let currentLikes = post.likes || 0;
+                let currentDislikes = post.dislikes || 0;
 
-        // ===== FLAPPY BIRD GAME =====
-        let bY = 200, bV = 0, gLoop, score = 0, pipes = [], frames = 0;
-        
-        function initFlappy() {
-            document.getElementById('game-overlay').style.display = 'block';
-            bY = window.innerHeight / 2;
-            bV = 0;
-            score = 0;
-            pipes = [];
-            frames = 0;
-            document.getElementById('game-score').innerText = score;
-            document.querySelectorAll('.pipe').forEach(e => e.remove());
-            
-            document.getElementById('game-overlay').onclick = () => { bV = -8; };
-            gLoop = setInterval(updateFlappy, 30);
-        }
-
-        function updateFlappy() {
-            frames++;
-            bV += 0.5;
-            bY += bV;
-            document.getElementById('game-bird').style.top = bY + "px";
-
-            if (frames % 80 === 0) {
-                const gapY = Math.random() * (window.innerHeight - 300) + 100;
-                const gapSize = 180;
-
-                let pTop = document.createElement('div');
-                pTop.className = 'pipe';
-                pTop.style.top = '0px';
-                pTop.style.left = window.innerWidth + 'px';
-                pTop.style.height = (gapY - gapSize / 2) + 'px';
-
-                let pBot = document.createElement('div');
-                pBot.className = 'pipe';
-                pBot.style.top = (gapY + gapSize / 2) + 'px';
-                pBot.style.left = window.innerWidth + 'px';
-                pBot.style.height = (window.innerHeight - gapY - gapSize / 2) + 'px';
-
-                document.getElementById('game-overlay').appendChild(pTop);
-                document.getElementById('game-overlay').appendChild(pBot);
-
-                pipes.push({ x: window.innerWidth, top: pTop, bot: pBot, passed: false });
-            }
-
-            pipes.forEach(p => {
-                p.x -= 5;
-                p.top.style.left = p.x + 'px';
-                p.bot.style.left = p.x + 'px';
-
-                let birdRect = document.getElementById('game-bird').getBoundingClientRect();
-                let tpRect = p.top.getBoundingClientRect();
-                let bpRect = p.bot.getBoundingClientRect();
-
-                if (
-                    birdRect.right - 10 > tpRect.left &&
-                    birdRect.left + 10 < tpRect.right &&
-                    (birdRect.top + 10 < tpRect.bottom || birdRect.bottom - 10 > bpRect.top)
-                ) {
-                    stopFlappy();
+                if (dislikedBy.includes(currentActiveUser)) {
+                    dislikedBy = dislikedBy.filter(u => u !== currentActiveUser);
+                    currentDislikes = Math.max(0, currentDislikes - 1);
+                } else {
+                    dislikedBy.push(currentActiveUser);
+                    currentDislikes += 1;
+                    if (likedBy.includes(currentActiveUser)) {
+                        likedBy = likedBy.filter(u => u !== currentActiveUser);
+                        currentLikes = Math.max(0, currentLikes - 1);
+                    }
                 }
 
-                if (!p.passed && p.x < 50) {
-                    p.passed = true;
-                    score++;
-                    document.getElementById('game-score').innerText = score;
+                post.likes = currentLikes;
+                post.likedBy = likedBy;
+                post.dislikes = currentDislikes;
+                post.dislikedBy = dislikedBy;
+
+                // Sync to database
+                if (!id.startsWith('temp-')) {
+                    db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts').doc(id).update({ 
+                        likes: currentLikes, 
+                        likedBy: likedBy,
+                        dislikes: currentDislikes,
+                        dislikedBy: dislikedBy
+                    }).catch(e => console.error(e));
+                }
+            });
+        };
+
+        window.toggleCommentDrawer = function(id) {
+            const drawer = document.getElementById(`comment-box-${id}`);
+            drawer.classList.toggle('hidden');
+        };
+
+        window.addCommentToPost = function(id) {
+            const input = document.getElementById(`comment-input-${id}`);
+            const text = input.value.trim();
+            if(!text) return;
+
+            const newComment = {
+                user: currentActiveUser,
+                avatar: accountProfiles[currentActiveUser].avatar,
+                text: text,
+                likes: 0,
+                likedBy: [],
+                dislikes: 0,
+                dislikedBy: []
+            };
+
+            updateLocalPostAndRender(id, (post) => {
+                if (!post.comments) post.comments = [];
+                post.comments.push(newComment);
+
+                // Sync to database
+                if (!id.startsWith('temp-')) {
+                    db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts').doc(id).update({ 
+                        comments: post.comments 
+                    }).catch(e => console.error(e));
                 }
             });
 
-            if (pipes.length > 0 && pipes[0].x < -100) {
-                pipes[0].top.remove();
-                pipes[0].bot.remove();
-                pipes.shift();
+            input.value = "";
+            const drawer = document.getElementById(`comment-box-${id}`);
+            if (drawer) drawer.classList.remove('hidden');
+        };
+
+        window.likeComment = function(postId, commentIdx) {
+            updateLocalPostAndRender(postId, (post) => {
+                const comments = post.comments || [];
+                const c = comments[commentIdx];
+                if (!c) return;
+
+                if (!c.likedBy) c.likedBy = [];
+                if (!c.dislikedBy) c.dislikedBy = [];
+                if (!c.likes) c.likes = 0;
+                if (!c.dislikes) c.dislikes = 0;
+
+                if (c.likedBy.includes(currentActiveUser)) {
+                    c.likedBy = c.likedBy.filter(u => u !== currentActiveUser);
+                    c.likes = Math.max(0, c.likes - 1);
+                } else {
+                    c.likedBy.push(currentActiveUser);
+                    c.likes += 1;
+                    if (c.dislikedBy.includes(currentActiveUser)) {
+                        c.dislikedBy = c.dislikedBy.filter(u => u !== currentActiveUser);
+                        c.dislikes = Math.max(0, c.dislikes - 1);
+                    }
+                }
+
+                comments[commentIdx] = c;
+                post.comments = comments;
+
+                // Sync to database
+                if (!postId.startsWith('temp-')) {
+                    db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts').doc(postId).update({ 
+                        comments: comments 
+                    }).catch(e => console.error(e));
+                }
+            });
+
+            // Ensure comment drawer remains open upon instant re-render
+            const drawer = document.getElementById(`comment-box-${postId}`);
+            if (drawer) drawer.classList.remove('hidden');
+        };
+
+        window.dislikeComment = function(postId, commentIdx) {
+            updateLocalPostAndRender(postId, (post) => {
+                const comments = post.comments || [];
+                const c = comments[commentIdx];
+                if (!c) return;
+
+                if (!c.likedBy) c.likedBy = [];
+                if (!c.dislikedBy) c.dislikedBy = [];
+                if (!c.likes) c.likes = 0;
+                if (!c.dislikes) c.dislikes = 0;
+
+                if (c.dislikedBy.includes(currentActiveUser)) {
+                    c.dislikedBy = c.dislikedBy.filter(u => u !== currentActiveUser);
+                    c.dislikes = Math.max(0, c.dislikes - 1);
+                } else {
+                    c.dislikedBy.push(currentActiveUser);
+                    c.dislikes += 1;
+                    if (c.likedBy.includes(currentActiveUser)) {
+                        c.likedBy = c.likedBy.filter(u => u !== currentActiveUser);
+                        c.likes = Math.max(0, c.likes - 1);
+                    }
+                }
+
+                comments[commentIdx] = c;
+                post.comments = comments;
+
+                // Sync to database
+                if (!postId.startsWith('temp-')) {
+                    db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts').doc(postId).update({ 
+                        comments: comments 
+                    }).catch(e => console.error(e));
+                }
+            });
+
+            // Ensure comment drawer remains open upon instant re-render
+            const drawer = document.getElementById(`comment-box-${postId}`);
+            if (drawer) drawer.classList.remove('hidden');
+        };
+
+        window.voteOnPollItem = async function(postId, optIdx) {
+            try {
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('posts').doc(postId);
+                const docSnap = await docRef.get();
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    const poll = data.poll;
+                    
+                    const alreadyVoted = poll.some(opt => opt.voters && opt.voters.includes(currentActiveUser));
+                    if (alreadyVoted) return showToast("You've already voted!", "error");
+
+                    if (!poll[optIdx].voters) poll[optIdx].voters = [];
+                    poll[optIdx].voters.push(currentActiveUser);
+                    poll[optIdx].votes = (poll[optIdx].votes || 0) + 1;
+
+                    await docRef.update({ poll: poll });
+                }
+            } catch (err) {
+                console.error("Voting action failed: ", err);
+            }
+        };
+
+        // --- PUBLIC PROFILE TARGET NAVIGATION ---
+        window.navigateToPublicProfile = function(username) {
+            const prof = accountProfiles[username];
+            if(!prof) return;
+
+            switchTab('you');
+            
+            document.getElementById('you-profile-avatar').src = prof.avatar;
+            document.getElementById('you-profile-name').innerText = `${username}`;
+            
+            const allPosts = JSON.parse(localStorage.getItem('pigeon_master_posts') || "[]");
+            const userPosts = allPosts.filter(p => p.username === username);
+            
+            document.getElementById('you-friends-count').innerText = (prof.friends || []).length;
+            document.getElementById('you-subs-count').innerText = (prof.subs || []).length;
+            document.getElementById('you-posts-count').innerText = userPosts.length;
+
+            const stream = document.getElementById('profile-posts-stream');
+            stream.innerHTML = "";
+            userPosts.forEach(p => {
+                stream.appendChild(createPostCardDOM(p));
+            });
+        };
+
+        window.toggleFriendStatus = function(targetUser) {
+            if(targetUser === currentActiveUser) return;
+            const profile = accountProfiles[currentActiveUser];
+            const targetProfile = accountProfiles[targetUser];
+
+            if(!profile.friends) profile.friends = [];
+            if(!targetProfile.friends) targetProfile.friends = [];
+
+            if (profile.friends.includes(targetUser)) {
+                profile.friends = profile.friends.filter(u => u !== targetUser);
+                targetProfile.friends = targetProfile.friends.filter(u => u !== currentActiveUser);
+                showToast(`Unfriended ${targetUser}.`);
+            } else {
+                profile.friends.push(targetUser);
+                targetProfile.friends.push(currentActiveUser);
+                showToast(`Now friends with ${targetUser}! 💬`);
             }
 
-            if(bY > window.innerHeight || bY < 0) stopFlappy();
+            localStorage.setItem('pigeon_master_profiles', JSON.stringify(accountProfiles));
+            buildMasterStreams();
+            updateDashboardMetrics();
+            buildFriendsAndSubscribersLists();
+        };
+
+        window.toggleSubscribeStatus = function(targetUser) {
+            if(targetUser === currentActiveUser) return;
+            const profile = accountProfiles[currentActiveUser];
+            const targetProfile = accountProfiles[targetUser];
+
+            if(!profile.subs) profile.subs = [];
+            if(!targetProfile.subs) targetProfile.subs = [];
+
+            if (profile.subs.includes(targetUser)) {
+                profile.subs = profile.subs.filter(u => u !== targetUser);
+                targetProfile.subs = targetProfile.subs.filter(u => u !== currentActiveUser);
+                showToast(`Unsubscribed from ${targetUser}.`);
+            } else {
+                profile.subs.push(targetUser);
+                targetProfile.subs.push(currentActiveUser);
+                showToast(`Subscribed to ${targetUser}! ★`);
+            }
+
+            localStorage.setItem('pigeon_master_profiles', JSON.stringify(accountProfiles));
+            buildMasterStreams();
+            updateDashboardMetrics();
+            buildFriendsAndSubscribersLists();
+        };
+
+        function buildFriendsAndSubscribersLists() {
+            const profile = accountProfiles[currentActiveUser];
+            if (!profile) return;
+            const subsListContainer = document.getElementById('subscribed-list');
+            const subsStreamContainer = document.getElementById('subs-stream');
+
+            if(!subsListContainer || !subsStreamContainer) return;
+
+            subsListContainer.innerHTML = "";
+            subsStreamContainer.innerHTML = "";
+
+            if (!profile.subs || profile.subs.length === 0) {
+                subsListContainer.innerHTML = `<span class="text-xs text-zinc-600">No subscriptions listed. Click "★ Sub" on feeds!</span>`;
+                subsStreamContainer.innerHTML = `<p class="text-center py-10 text-zinc-600 text-xs">Follow profiles to compile subscription stream feeds.</p>`;
+                return;
+            }
+
+            profile.subs.forEach(username => {
+                const subProf = accountProfiles[username];
+                if (!subProf) return;
+
+                const card = document.createElement('div');
+                card.className = "flex flex-col items-center gap-1.5 cursor-pointer shrink-0";
+                card.onclick = () => navigateToPublicProfile(username);
+                card.innerHTML = `
+                    <div class="w-12 h-12 rounded-full overflow-hidden border border-zinc-800">
+                        <img src="${subProf.avatar}" class="w-full h-full object-cover">
+                    </div>
+                    <span class="text-[9px] font-black text-zinc-400">${username}</span>
+                `;
+                subsListContainer.appendChild(card);
+            });
+
+            const allPosts = JSON.parse(localStorage.getItem('pigeon_master_posts') || "[]");
+            const subbedPosts = allPosts.filter(p => profile.subs.includes(p.username));
+
+            if (subbedPosts.length === 0) {
+                subsStreamContainer.innerHTML = `<p class="text-center py-10 text-zinc-600 text-xs">Subscribed users haven't published content.</p>`;
+            } else {
+                subbedPosts.forEach(post => {
+                    subsStreamContainer.appendChild(createPostCardDOM(post));
+                });
+            }
         }
 
-        function stopFlappy() {
-            clearInterval(gLoop);
-            document.getElementById('game-overlay').style.display = 'none';
-            alert("Game Over! Score: " + score);
+        // --- PROFILE SUB-STREAMS AND SEGMENTATION FILTERS ---
+        let activeProfileFilter = 'all';
+        function renderProfileSubStreams() {
+            const allPosts = JSON.parse(localStorage.getItem('pigeon_master_posts') || "[]");
+            const userPosts = allPosts.filter(p => p.username === currentActiveUser);
+            const stream = document.getElementById('profile-posts-stream');
+            if (!stream) return;
+            stream.innerHTML = "";
+
+            const displayedPosts = activeProfileFilter === 'shorts' 
+                ? userPosts.filter(p => p.isShort) 
+                : userPosts;
+
+            if (displayedPosts.length === 0) {
+                stream.innerHTML = `<p class="text-center py-10 text-zinc-600 text-xs">No posts uploaded yet under this configuration.</p>`;
+            } else {
+                displayedPosts.forEach(post => {
+                    stream.appendChild(createPostCardDOM(post));
+                });
+            }
         }
+
+        window.filterProfileView = function(type) {
+            activeProfileFilter = type;
+            const allBtn = document.getElementById('tab-all-trigger');
+            const shortsBtn = document.getElementById('tab-shorts-trigger');
+
+            if (type === 'shorts') {
+                shortsBtn.className = "flex-1 py-3 text-center font-bold text-sm border-b-2 border-sky-500 text-sky-400";
+                allBtn.className = "flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-zinc-500 hover:text-zinc-300";
+            } else {
+                allBtn.className = "flex-1 py-3 text-center font-bold text-sm border-b-2 border-sky-500 text-sky-400";
+                shortsBtn.className = "flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-zinc-500 hover:text-zinc-300";
+            }
+
+            renderProfileSubStreams();
+        };
+
+        // --- TAB NAVIGATION SWITCHBOARD CONTROLLER ---
+        window.switchTab = function(tabName) {
+            activeTab = tabName;
+            
+            const viewports = {
+                'home': 'home-viewport',
+                'shorts': 'shorts-viewport',
+                'subs': 'subs-viewport',
+                'you': 'you-viewport'
+            };
+
+            Object.keys(viewports).forEach(key => {
+                const el = document.getElementById(viewports[key]);
+                if (el) {
+                    if (key === tabName) {
+                        el.classList.remove('hidden');
+                    } else {
+                        el.classList.add('hidden');
+                    }
+                }
+            });
+
+            const buttons = {
+                'home': 'nav-home',
+                'shorts': 'nav-shorts',
+                'subs': 'nav-subs',
+                'you': 'nav-you'
+            };
+
+            Object.keys(buttons).forEach(key => {
+                const btn = document.getElementById(buttons[key]);
+                if (btn) {
+                    const indicator = btn.querySelector('.nav-indicator');
+                    if (key === tabName) {
+                        btn.className = "flex flex-col items-center relative text-white scale-105 transition-all duration-150";
+                        if (indicator) indicator.classList.remove('hidden');
+                    } else {
+                        btn.className = "flex flex-col items-center relative text-zinc-500 hover:text-zinc-300 transition-all duration-150";
+                        if (indicator) indicator.classList.add('hidden');
+                    }
+                }
+            });
+
+            if (tabName === 'you') {
+                renderActiveAppInterface();
+            }
+        };
+
+        // --- MESSENGER INTERACTION SIDEBAR ---
+        window.openSidebar = function() {
+            document.getElementById('sidebar').classList.remove('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.remove('hidden');
+            renderSidebarFriends();
+        };
+
+        window.closeSidebar = function() {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.add('hidden');
+        };
+
+        function renderSidebarFriends() {
+            const profile = accountProfiles[currentActiveUser];
+            const container = document.getElementById('friends-list');
+            container.innerHTML = "";
+
+            if (!profile || !profile.friends || profile.friends.length === 0) {
+                container.innerHTML = `<p class="text-xs text-zinc-600 p-2 text-center">Add friends in the home feed timeline to chat! 🕊️</p>`;
+                return;
+            }
+
+            profile.friends.forEach(username => {
+                const fProf = accountProfiles[username];
+                if (!fProf) return;
+
+                const card = document.createElement('div');
+                card.className = "flex items-center gap-3 p-2.5 rounded-xl hover:bg-zinc-900 cursor-pointer border border-transparent hover:border-zinc-800 transition duration-150";
+                card.onclick = () => launchChatWithFriend(username);
+                card.innerHTML = `
+                    <div class="w-10 h-10 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700">
+                        <img src="${fProf.avatar}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <span class="font-bold text-xs text-zinc-200 block">${username}</span>
+                        <span class="text-[9px] text-zinc-500">Tap to whisper securely</span>
+                    </div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.filterFriendsList = function() {
+            const query = document.getElementById('sidebar-search').value.toLowerCase().trim();
+            const cards = document.getElementById('friends-list').children;
+
+            Array.from(cards).forEach(card => {
+                const name = card.querySelector('span')?.innerText.toLowerCase();
+                if (name && name.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+
+        window.launchChatWithFriend = function(username) {
+            closeSidebar();
+            currentMatrixChatRoomTarget = username;
+            const fProf = accountProfiles[username];
+
+            document.getElementById('chat-avatar').src = fProf.avatar;
+            document.getElementById('chat-user-title').innerText = `${username}`;
+            document.getElementById('chat-box').classList.remove('hidden');
+
+            renderChatMessageLogs();
+        };
+
+        window.closeChat = function() {
+            document.getElementById('chat-box').classList.add('hidden');
+            currentMatrixChatRoomTarget = null;
+        };
+
+        function renderChatMessageLogs() {
+            const logsContainer = document.getElementById('chat-logs');
+            logsContainer.innerHTML = "";
+
+            const key = getChatMatrixRoomKey();
+            const raw = localStorage.getItem(`chat_logs_${key}`) || "[]";
+            const messages = JSON.parse(raw);
+
+            if (messages.length === 0) {
+                logsContainer.innerHTML = `
+                    <div class="text-center py-20 text-zinc-600 text-xs flex flex-col items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-shield text-3xl"></i>
+                        <span>This secure endpoint is locked with end-to-end encryption hashes. Chatting holds full confidentiality.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            messages.forEach(m => {
+                const isMe = m.sender === currentActiveUser;
+                const bubble = document.createElement('div');
+                bubble.className = `flex flex-col max-w-[75%] rounded-2xl p-3 text-xs leading-relaxed ${isMe ? 'bg-sky-500 text-white self-end ml-auto rounded-tr-none' : 'bg-zinc-900 text-zinc-200 rounded-tl-none'}`;
+                
+                bubble.innerHTML = `
+                    <p class="font-semibold">${m.text}</p>
+                    <div class="flex items-center justify-end gap-1 mt-1 text-[8px] opacity-70">
+                        <span>12:00 PM</span>
+                        ${isMe ? '<span class="text-white">✓✓</span>' : ''}
+                    </div>
+                `;
+                logsContainer.appendChild(bubble);
+            });
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        window.sendChatMessage = function() {
+            const input = document.getElementById('chat-input');
+            const val = input.value.trim();
+            if(!val) return;
+
+            const key = getChatMatrixRoomKey();
+            const raw = localStorage.getItem(`chat_logs_${key}`) || "[]";
+            const messages = JSON.parse(raw);
+
+            messages.push({
+                sender: currentActiveUser,
+                text: val,
+                timestamp: Date.now()
+            });
+
+            localStorage.setItem(`chat_logs_${key}`, JSON.stringify(messages));
+            input.value = "";
+            renderChatMessageLogs();
+        };
+
+        function getChatMatrixRoomKey() {
+            return [currentActiveUser, currentMatrixChatRoomTarget].sort().join("_matrix_");
+        }
+
+        function timeAgo(ms) {
+            const diff = Date.now() - ms;
+            const mins = Math.floor(diff / 60000);
+            if(mins < 1) return "Just now";
+            if(mins < 60) return `${mins}m ago`;
+            const hrs = Math.floor(mins / 60);
+            if(hrs < 24) return `${hrs}h ago`;
+            return new Date(ms).toLocaleDateString();
+        }
+
+        // ================= ARCADE PHYSICS ENGINE: FLAPPY PIGEON =================
+        let canvas, ctx;
+        let animationFrameId;
+        let birdX = 50, birdY = 200, birdVelocity = 0, birdGravity = 0.4;
+        let gameActive = false, score = 0;
+        let obstaclePipes = [];
+        let obstaclePipeTimer = 0;
+
+        window.launchFlappyPigeon = function() {
+            document.getElementById('game-viewport').classList.remove('hidden');
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            birdX = 60;
+            birdY = canvas.height / 2;
+            birdVelocity = 0;
+            score = 0;
+            obstaclePipes = [];
+            obstaclePipeTimer = 0;
+            gameActive = true;
+
+            canvas.onmousedown = () => { birdVelocity = -6.5; };
+            canvas.ontouchstart = (e) => { e.preventDefault(); birdVelocity = -6.5; };
+
+            runArcadeGameLoop();
+        };
+
+        window.exitFlappyArcade = function() {
+            gameActive = false;
+            cancelAnimationFrame(animationFrameId);
+            document.getElementById('game-viewport').classList.add('hidden');
+        };
+
+        function runArcadeGameLoop() {
+            if (!gameActive) return;
+
+            ctx.fillStyle = '#0f172a'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            birdVelocity += birdGravity;
+            birdY += birdVelocity;
+
+            // Touching ground or ceiling triggers Game Over instantly! 🛑
+            if (birdY >= canvas.height - 15 || birdY <= 15) {
+                showToast(`Game Over! Touched boundary. Score: ${score} 🏁`, "error");
+                gameActive = false;
+                exitFlappyArcade();
+                return;
+            }
+
+            // Draw Majestic Pixel Pigeon
+            ctx.save();
+            ctx.translate(birdX, birdY);
+            ctx.scale(-1, 1);
+            ctx.font = "32px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🕊️", 0, 0);
+            ctx.restore();
+
+            obstaclePipeTimer++;
+            if (obstaclePipeTimer % 100 === 0) {
+                const gapSize = 130;
+                const minHeight = 40;
+                const maxHeight = canvas.height - gapSize - minHeight;
+                const pipeTopHeight = Math.floor(Math.random() * (maxHeight - minHeight)) + minHeight;
+
+                obstaclePipes.push({
+                    x: canvas.width,
+                    topHeight: pipeTopHeight,
+                    gap: gapSize,
+                    width: 55,
+                    passed: false
+                });
+            }
+
+            for (let i = obstaclePipes.length - 1; i >= 0; i--) {
+                const p = obstaclePipes[i];
+                p.x -= 2.5; 
+
+                ctx.fillStyle = '#22c55e'; 
+                ctx.strokeStyle = '#15803d'; 
+                ctx.lineWidth = 3;
+
+                ctx.fillRect(p.x, 0, p.width, p.topHeight);
+                ctx.strokeRect(p.x, -5, p.width, p.topHeight + 5);
+
+                const bottomPipeY = p.topHeight + p.gap;
+                const bottomPipeHeight = canvas.height - bottomPipeY;
+                ctx.fillRect(p.x, bottomPipeY, p.width, bottomPipeHeight);
+                ctx.strokeRect(p.x, bottomPipeY, p.width, bottomPipeHeight + 5);
+
+                // Pipe collision triggers Game Over instantly! 🛑
+                const birdRadius = 15;
+                if (birdX + birdRadius > p.x && birdX - birdRadius < p.x + p.width) {
+                    if (birdY - birdRadius < p.topHeight || birdY + birdRadius > bottomPipeY) {
+                        showToast(`Game Over! Hit pipe. Score: ${score} 🏁`, "error");
+                        gameActive = false;
+                        exitFlappyArcade();
+                        return;
+                    }
+                }
+
+                if (!p.passed && p.x < birdX) {
+                    p.passed = true;
+                    score++;
+                    document.getElementById('game-score-display').innerText = score;
+                }
+
+                if (p.x < -100) {
+                    obstaclePipes.splice(i, 1);
+                }
+            }
+
+            animationFrameId = requestAnimationFrame(runArcadeGameLoop);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initSessionState();
+        });
     </script>
 </body>
 </html>
+
+```
